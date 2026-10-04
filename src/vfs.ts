@@ -56,7 +56,10 @@ function dirname(path: string): string {
  * else is resolved against the including file's directory (RAML semantics,
  * PARITY.md #10).
  */
-export function resolveIncludePath(fromFile: string, includePath: string): string {
+export function resolveIncludePath(
+  fromFile: string,
+  includePath: string,
+): string {
   const target = includePath.replace(/\\/g, "/");
   if (target.startsWith("/")) return normalizePath(target);
   const dir = dirname(fromFile);

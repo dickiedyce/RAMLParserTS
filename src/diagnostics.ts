@@ -11,6 +11,7 @@ export type DiagnosticCode =
   | "include-not-found"
   | "include-cycle"
   | "include-error"
+  | "include-fallback"
   | (string & {});
 
 export interface Diagnostic {

@@ -64,7 +64,9 @@ describe("loadSpecTree", () => {
   });
 
   it("replaces missing includes with a placeholder and records a diagnostic", () => {
-    const vfs = createVfs([["spec.raml", "title: T\nx: !include missing.yaml\n"]]);
+    const vfs = createVfs([
+      ["spec.raml", "title: T\nx: !include missing.yaml\n"],
+    ]);
     const { value, diagnostics } = loadSpecTree(vfs, "spec.raml");
     expect(value).toEqual({
       title: "T",
@@ -103,6 +105,23 @@ describe("loadSpecTree", () => {
     expect(diagnostics[0]).toMatchObject({
       code: "include-error",
       includePath: "bad.yaml",
+    });
+  });
+
+  it("falls back to root-relative resolution with a warning diagnostic", () => {
+    // MuleSoft exports write root-relative includes without a leading "/".
+    const vfs = createVfs([
+      ["api.raml", "x: !include libs/frag.yaml\n"],
+      ["libs/frag.yaml", "inner: !include exchange_modules/mods/deep.yaml\n"],
+      ["exchange_modules/mods/deep.yaml", "v: 1\n"],
+    ]);
+    const { value, diagnostics } = loadSpecTree(vfs, "api.raml");
+    expect(value).toEqual({ x: { inner: { v: 1 } } });
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({
+      code: "include-fallback",
+      severity: "warning",
+      path: "libs/frag.yaml",
     });
   });
 

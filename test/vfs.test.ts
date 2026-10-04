@@ -33,9 +33,9 @@ describe("resolveIncludePath", () => {
   });
 
   it("resolves root-relative includes (leading /) against the spec root", () => {
-    expect(resolveIncludePath("api/deep/spec.raml", "/overview_files/ov.md")).toBe(
-      "overview_files/ov.md",
-    );
+    expect(
+      resolveIncludePath("api/deep/spec.raml", "/overview_files/ov.md"),
+    ).toBe("overview_files/ov.md");
     expect(resolveIncludePath("spec.raml", "/x.raml")).toBe("x.raml");
   });
 });

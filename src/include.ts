@@ -132,10 +132,29 @@ function resolveInclude(
   env: Env,
 ): unknown {
   const rawPath = target.rawPath;
-  const resolved = resolveIncludePath(env.filePath, rawPath);
+  let resolved = resolveIncludePath(env.filePath, rawPath);
   const line =
     offset === undefined ? undefined : env.lineCounter.linePos(offset).line;
   const at = { path: env.filePath, line, includePath: rawPath };
+
+  // Lenient fallback (PARITY.md #13): MuleSoft exports sometimes write
+  // root-relative includes without a leading "/". If the file-relative path
+  // misses but the path exists from the spec root, use it and say so.
+  if (
+    !env.ctx.vfs.has(resolved) &&
+    !rawPath.replace(/\\/g, "/").startsWith("/")
+  ) {
+    const fallback = normalizePath(rawPath);
+    if (env.ctx.vfs.has(fallback)) {
+      env.ctx.diagnostics.push({
+        code: "include-fallback",
+        severity: "warning",
+        message: `Include ${rawPath} not found next to ${env.filePath}; resolved from spec root`,
+        ...at,
+      });
+      resolved = fallback;
+    }
+  }
 
   if (env.ctx.stack.includes(resolved)) {
     env.ctx.diagnostics.push({

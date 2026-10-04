@@ -1,0 +1,76 @@
+#%RAML 1.0
+title: Leap Style API
+version: v2
+description: Exercises traits, resource types, security and requirement tables.
+mediaType: application/json
+uses:
+  SecuritySchemes: libs/security.raml
+  localDataTypes: libs/types.raml
+  resourceMethods: libs/methods.raml
+traits:
+  success_200: !include libs/success_200.raml
+securedBy: [ SecuritySchemes.clientIdEnforcement ]
+
+/items:
+  description: !include overview_files/ov_items.md
+  get:
+    displayName: List items
+    description: Lists items.
+    queryParameters:
+      filter:
+        type: string
+        example: recent
+      tags:
+        type: string[]
+        required: false
+        description: Tag filters.
+        example: [ "A", "B" ]
+    is: [ success_200: { recordType: localDataTypes.item } ]
+  post:
+    displayName: Create item
+    description: |
+      Creates an item.
+
+      ### Non-Functional Requirements:
+
+      | # | Use Case | Detailed Description | Acceptance Criteria Description |
+      | --- | --- | --- | --- |
+      | NFR-L-03 | UC-4 | Writes confirm within 500ms. | Measured at the API boundary. |
+    body:
+      type: localDataTypes.item
+      example: !include examples/item.json
+    responses:
+      201:
+        description: Created
+        body:
+          application/json:
+            type: localDataTypes.item
+            example: !include examples/item.json
+
+/items/{itemId}:
+  description: A single item.
+  uriParameters:
+    itemId:
+      type: string
+      description: Item id.
+      example: "D-1"
+  get:
+    displayName: Get item
+    description: Fetch one item.
+    is: [ success_200: { recordType: localDataTypes.item } ]
+  /public:
+    get:
+      displayName: Public status
+      description: Anonymous status.
+      securedBy: [ null ]
+      responses:
+        200:
+          description: OK
+          body:
+            type: string
+            example: ok
+
+/status:
+  type:
+    resourceMethods.collection:
+      recordType: localDataTypes.item

@@ -1,0 +1,56 @@
+{
+  "apiInfo" : {
+    "description" : "A clean RAML spec with no divergent constructs.",
+    "securitySchemes" : {
+
+    },
+    "title" : "Basic API",
+    "version" : "v1"
+  },
+  "endpoints" : [
+    {
+      "description" : "Returns pong.\n\n### Functional Requirements:\n\n| # | Use Case | Detailed Description | Acceptance Criteria Description |\n| --- | --- | --- | --- |\n| FR-B-01 | UC-1 | Ping returns pong. | 200 response with pong. |\n",
+      "method" : "GET",
+      "parameters" : [
+        {
+          "description" : "A query flag.",
+          "example" : "hello",
+          "location" : "query",
+          "name" : "q",
+          "required" : true,
+          "schemaType" : "string"
+        }
+      ],
+      "path" : "\/ping",
+      "requirements" : [
+        {
+          "acceptanceCriteria" : "200 response with pong.",
+          "description" : "Ping returns pong.",
+          "reqId" : "FR-B-01",
+          "reqType" : "FR",
+          "useCase" : "UC-1"
+        }
+      ],
+      "responses" : [
+        {
+          "contentType" : "application\/json",
+          "description" : "OK",
+          "statusCode" : "200"
+        }
+      ],
+      "securitySchemes" : [
+
+      ],
+      "summary" : "Ping"
+    }
+  ],
+  "requirements" : [
+    {
+      "acceptanceCriteria" : "200 response with pong.",
+      "description" : "Ping returns pong.",
+      "reqId" : "FR-B-01",
+      "reqType" : "FR",
+      "useCase" : "UC-1"
+    }
+  ]
+}

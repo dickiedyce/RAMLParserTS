@@ -40,6 +40,13 @@ golden-file harness fails on any delta not listed there. If you change parser
 behaviour relative to the Swift implementation, add or update a `PARITY.md` entry
 in the same commit.
 
+The harness lives in `parity/` (TS→Swift projection, keyed golden diff,
+allowlist) and runs as part of `npm run test`. Regenerate the Swift goldens on
+macOS with `npm run goldens` (needs the Xcode toolchain; builds
+`parity/swift-runner/`, which pins RAMLParserKit via SwiftPM). Private corpora
+dropped in `fixtures/local/<name>/` are covered automatically once their goldens
+are generated — they are never committed.
+
 ## Fixtures and sample specs
 
 - Public fixtures are **synthetic** (invented API content, MuleSoft-export-like

@@ -1,0 +1,8 @@
+#%RAML 1.0 Trait
+responses:
+  200:
+    description: OK
+    body:
+      application/json:
+        type: <<recordType>>
+        example: !include ../examples/item.json

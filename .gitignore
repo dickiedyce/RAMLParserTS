@@ -12,6 +12,10 @@ test-results/
 # Intermediate demo recording (the derived GIF is committed)
 docs/assets/*.webm
 
+# SwiftPM artifacts for the parity golden runner
+parity/swift-runner/.build/
+parity/swift-runner/.swiftpm/
+
 # Proprietary sample corpora — NEVER commit (DESIGN.md §8)
 # Real MuleSoft exports belong in fixtures/local/ or stay outside the repo.
 # Only synthetic demo zips (invented content) may be committed under examples/.

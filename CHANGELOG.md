@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Parity harness: `parity/swift-runner/` (RAMLParserKit-based golden runner,
+  macOS), `parity/project.ts` (TS→Swift projection), `parity/diff.ts` (keyed
+  golden diff) and `parity/allowlist.json`; `test/parity.test.ts` gates every
+  cross-tool delta on a `PARITY.md` entry. Synthetic fixtures with committed
+  goldens in `fixtures/`; private corpora via `fixtures/local/`.
+  Regenerate goldens with `npm run goldens`.
+
+### Changed
+
+- PARITY.md verified against real Swift goldens: `securedBy: [null]` renders as
+  `"<null>"` in Swift (documented as `"null"` before), Swift's NFR-table
+  mistyping is documented precisely (#11), and two new entries cover RAML
+  security handling (#14) and response body media-type resolution (#15).
+
 ## [0.1.0] - 2026-10-04
 
 ### Added

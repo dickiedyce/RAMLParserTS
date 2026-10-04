@@ -1,0 +1,60 @@
+[
+  {
+    "parity": 1,
+    "kinds": ["ts-extra"],
+    "paths": [["endpoints", "*", "parameters", "*"]]
+  },
+  {
+    "parity": 2,
+    "kinds": ["value"],
+    "paths": [["endpoints", "*", "parameters", "*", "required"]]
+  },
+  {
+    "parity": 5,
+    "kinds": ["ts-extra"],
+    "paths": [
+      ["requirements", "*"],
+      ["endpoints", "*", "requirements", "*"]
+    ]
+  },
+  {
+    "parity": 11,
+    "kinds": ["ts-extra", "ts-missing"],
+    "paths": [
+      ["requirements", "*"],
+      ["endpoints", "*", "requirements", "*"]
+    ]
+  },
+  {
+    "parity": 11,
+    "kinds": ["value"],
+    "paths": [
+      ["requirements", "*", "*"],
+      ["endpoints", "*", "requirements", "*", "*"]
+    ]
+  },
+  {
+    "parity": 12,
+    "kinds": ["ts-extra", "ts-missing"],
+    "paths": [
+      ["endpoints", "*"],
+      ["endpoints", "*", "responses", "*"],
+      ["endpoints", "*", "parameters", "*"],
+      ["endpoints", "*", "summary"],
+      ["endpoints", "*", "description"],
+      ["endpoints", "*", "requirements", "*"]
+    ]
+  },
+  {
+    "parity": 14,
+    "paths": [
+      ["apiInfo", "securitySchemes", "**"],
+      ["endpoints", "*", "securitySchemes", "*"]
+    ]
+  },
+  {
+    "parity": 15,
+    "kinds": ["value"],
+    "paths": [["endpoints", "*", "responses", "*", "contentType"]]
+  }
+]

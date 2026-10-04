@@ -1,0 +1,55 @@
+{
+  "apiInfo" : {
+    "description" : "A clean OpenAPI spec with no divergent constructs.",
+    "securitySchemes" : {
+      "apiKey" : {
+        "description" : "API key auth.",
+        "scheme" : "",
+        "type" : "apiKey"
+      }
+    },
+    "title" : "OAS Basic",
+    "version" : "1.0"
+  },
+  "endpoints" : [
+    {
+      "description" : "Fetch one item.",
+      "method" : "GET",
+      "parameters" : [
+        {
+          "description" : "Item id.",
+          "location" : "path",
+          "name" : "itemId",
+          "required" : true,
+          "schemaType" : "string"
+        },
+        {
+          "description" : "Verbose.",
+          "example" : "true",
+          "location" : "query",
+          "name" : "verbose",
+          "required" : false,
+          "schemaType" : "boolean"
+        }
+      ],
+      "path" : "\/items\/{itemId}",
+      "requirements" : [
+
+      ],
+      "responses" : [
+        {
+          "contentType" : "application\/json",
+          "description" : "OK",
+          "statusCode" : "200"
+        }
+      ],
+      "securitySchemes" : [
+        "apiKey"
+      ],
+      "summary" : "Get item"
+    }
+  ],
+  "requirements" : [
+
+  ]
+}

@@ -1,0 +1,29 @@
+#%RAML 1.0
+title: Basic API
+version: v1
+description: A clean RAML spec with no divergent constructs.
+/ping:
+  get:
+    displayName: Ping
+    description: |
+      Returns pong.
+
+      ### Functional Requirements:
+
+      | # | Use Case | Detailed Description | Acceptance Criteria Description |
+      | --- | --- | --- | --- |
+      | FR-B-01 | UC-1 | Ping returns pong. | 200 response with pong. |
+    queryParameters:
+      q:
+        type: string
+        required: true
+        description: A query flag.
+        example: hello
+    responses:
+      200:
+        description: OK
+        body:
+          application/json:
+            type: Pong
+            example:
+              message: pong

@@ -1,0 +1,17 @@
+#%RAML 1.0 Library
+resourceTypes:
+  collection:
+    get:
+      displayName: List <<recordType | records>>
+      description: Lists records.
+      queryParameters:
+        limit:
+          type: integer
+          maximum: 100
+      responses:
+        200:
+          description: OK
+          body:
+            application/json:
+              type: <<recordType>>
+              example: []

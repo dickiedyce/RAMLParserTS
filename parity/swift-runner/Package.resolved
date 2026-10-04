@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "ramlparserkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dickiedyce/RAMLParserKit",
+      "state" : {
+        "revision" : "6f2ce279822f9e0cf33e522de3e113e61932e8c5",
+        "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "yams",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jpsim/Yams",
+      "state" : {
+        "revision" : "3d6871d5b4a5cd519adf233fbb576e0a2af71c17",
+        "version" : "5.4.0"
+      }
+    }
+  ],
+  "version" : 2
+}

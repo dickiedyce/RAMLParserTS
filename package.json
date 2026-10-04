@@ -55,6 +55,7 @@
     "check:ui": "npm run build:ui && playwright test --grep-invert @demo",
     "demo:zip": "node scripts/make-demo-zip.mjs",
     "demo:gif": "npm run build:ui && playwright test --grep @demo && node scripts/make-gif.mjs",
+    "goldens": "node scripts/swift-golden.mts",
     "prepublishOnly": "npm run check"
   },
   "devDependencies": {

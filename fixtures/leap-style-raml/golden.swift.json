@@ -1,0 +1,126 @@
+{
+  "apiInfo" : {
+    "description" : "Exercises traits, resource types, security and requirement tables.",
+    "securitySchemes" : {
+      "default" : {
+        "description" : "RAML security scheme",
+        "scheme" : "SecuritySchemes.clientIdEnforcement",
+        "type" : "RAML Security"
+      }
+    },
+    "title" : "Leap Style API",
+    "version" : "v2"
+  },
+  "endpoints" : [
+    {
+      "description" : "Fetch one item.",
+      "method" : "GET",
+      "parameters" : [
+
+      ],
+      "path" : "\/items\/{itemId}",
+      "requirements" : [
+
+      ],
+      "responses" : [
+
+      ],
+      "securitySchemes" : [
+
+      ],
+      "summary" : "Get item"
+    },
+    {
+      "description" : "Anonymous status.",
+      "method" : "GET",
+      "parameters" : [
+
+      ],
+      "path" : "\/items\/{itemId}\/public",
+      "requirements" : [
+
+      ],
+      "responses" : [
+        {
+          "contentType" : "example",
+          "description" : "OK",
+          "statusCode" : "200"
+        }
+      ],
+      "securitySchemes" : [
+        "<null>"
+      ],
+      "summary" : "Public status"
+    },
+    {
+      "description" : "Lists items.",
+      "method" : "GET",
+      "parameters" : [
+        {
+          "description" : "Tag filters.",
+          "example" : "[\"A\", \"B\"]",
+          "location" : "query",
+          "name" : "tags",
+          "required" : false,
+          "schemaType" : "string[]"
+        },
+        {
+          "description" : "",
+          "example" : "recent",
+          "location" : "query",
+          "name" : "filter",
+          "required" : true,
+          "schemaType" : "string"
+        }
+      ],
+      "path" : "\/items",
+      "requirements" : [
+
+      ],
+      "responses" : [
+
+      ],
+      "securitySchemes" : [
+
+      ],
+      "summary" : "List items"
+    },
+    {
+      "description" : "Creates an item.\n\n### Non-Functional Requirements:\n\n| # | Use Case | Detailed Description | Acceptance Criteria Description |\n| --- | --- | --- | --- |\n| NFR-L-03 | UC-4 | Writes confirm within 500ms. | Measured at the API boundary. |\n",
+      "method" : "POST",
+      "parameters" : [
+
+      ],
+      "path" : "\/items",
+      "requirements" : [
+        {
+          "acceptanceCriteria" : "Measured at the API boundary.",
+          "description" : "Writes confirm within 500ms.",
+          "reqId" : "NFR-L-03",
+          "reqType" : "FR",
+          "useCase" : "UC-4"
+        }
+      ],
+      "responses" : [
+        {
+          "contentType" : "application\/json",
+          "description" : "Created",
+          "statusCode" : "201"
+        }
+      ],
+      "securitySchemes" : [
+
+      ],
+      "summary" : "Create item"
+    }
+  ],
+  "requirements" : [
+    {
+      "acceptanceCriteria" : "Measured at the API boundary.",
+      "description" : "Writes confirm within 500ms.",
+      "reqId" : "NFR-L-03",
+      "reqType" : "FR",
+      "useCase" : "UC-4"
+    }
+  ]
+}

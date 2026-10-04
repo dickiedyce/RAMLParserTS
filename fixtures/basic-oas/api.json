@@ -1,0 +1,46 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "OAS Basic",
+    "version": "1.0",
+    "description": "A clean OpenAPI spec with no divergent constructs."
+  },
+  "security": [{ "apiKey": [] }],
+  "paths": {
+    "/items/{itemId}": {
+      "get": {
+        "summary": "Get item",
+        "description": "Fetch one item.",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "description": "Item id.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "verbose",
+            "in": "query",
+            "required": false,
+            "description": "Verbose.",
+            "schema": { "type": "boolean", "example": true }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "type": "object" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": { "type": "apiKey", "description": "API key auth." }
+    }
+  }
+}

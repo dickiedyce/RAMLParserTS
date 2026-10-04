@@ -5,6 +5,10 @@ node_modules/
 dist/
 coverage/
 
+# Playwright artifacts
+playwright-report/
+test-results/
+
 # Proprietary sample corpora — NEVER commit (DESIGN.md §8)
 # Real MuleSoft exports belong in fixtures/local/ or stay outside the repo.
 # Only synthetic demo zips (invented content) may be committed under examples/.

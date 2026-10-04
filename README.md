@@ -49,6 +49,24 @@ Or use the IIFE build from a plain `<script>` tag:
 _(API stabilising — see `DESIGN.md` §9. This section fills in as the parser
 lands.)_
 
+## Viewer
+
+A single-file Svelte viewer browses a dropped spec (folder or zip):
+Endpoints / Requirements / Diagnostics / Raw views, markdown exports
+(`endpoints.md`, `requirements.md`) and print styles. The built page is one
+self-contained HTML file that runs from disk, offline, with no backend — nothing
+leaves your machine.
+
+```sh
+npm run dev:ui     # develop with hot reload
+npm run build:ui   # write viewer/dist/index.html (self-contained)
+npm run check:ui   # build + Playwright drop-to-render smoke
+```
+
+Open `viewer/dist/index.html` in a browser and drop a MuleSoft export (folder
+or zip) onto it. When several root documents are present, pick one from the
+root picker.
+
 ## Development
 
 ```sh
@@ -57,7 +75,8 @@ npm run check   # typecheck + lint + tests + build
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). No CI is configured — run
-`npm run check` before pushing.
+`npm run check` before pushing. The Playwright smoke (`npm run check:ui`) needs
+`npx playwright install chromium` once first.
 
 ## Credits
 

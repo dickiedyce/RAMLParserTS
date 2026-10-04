@@ -49,7 +49,16 @@ export default tseslint.config(
   },
   {
     // Tooling and tests run under Node — built-ins are fine there.
-    files: ["vite.config.ts", "vitest.config.ts", "scripts/**", "test/**"],
+    files: [
+      "vite.config.ts",
+      "vitest.config.ts",
+      "playwright.config.ts",
+      "scripts/**",
+      "test/**",
+      "viewer/vite.config.ts",
+      "viewer/tests/**",
+      "viewer/e2e/**",
+    ],
     rules: {
       "no-restricted-imports": "off",
       "no-restricted-globals": "off",

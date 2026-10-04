@@ -17,7 +17,19 @@ npm install
 npm run check
 ```
 
-Useful individual scripts: `npm run test:watch`, `npm run lint`, `npm run build`.
+Useful individual scripts: `npm run test:watch`, `npm run lint`, `npm run build`,
+`npm run dev:ui` (viewer dev server), `npm run build:ui` (single-file viewer
+build).
+
+## Testing the viewer
+
+- Component tests live in `viewer/tests/` (Vitest + @testing-library/svelte on
+  jsdom) and run as part of `npm run check`.
+- One Playwright smoke (`viewer/e2e/smoke.spec.ts`) exercises the risky seam —
+  drop -> root picker -> parse -> views — through the real built single-file
+  HTML. Run it with `npm run check:ui` (kept out of `npm run check` because it
+  needs a browser); run `npx playwright install chromium` once first.
+- UI work follows TDD: write the component test first, then the component.
 
 ## Parity with RAMLParserKit
 

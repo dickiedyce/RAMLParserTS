@@ -45,3 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requirements carry `source { file, line }` and `scope: "resource" | "method"`.
 - `parseSpec()` / `parseFiles()` composition entry points (VFS/zip/FileList →
   resolved + extracted `ParsedSpec`).
+- Viewer (`viewer/`): single-file Svelte app (runs from disk, offline) with
+  drag-and-drop of spec folders/zips, root-document picker, Endpoints /
+  Requirements / Diagnostics / Raw views, markdown exports (`endpoints.md`,
+  `requirements.md`) and print styles. Built via `npm run build:ui` to one
+  self-contained HTML file.
+- Viewer tests: Vitest + @testing-library/svelte component tests (`viewer/tests/`)
+  and one Playwright drop-to-render smoke (`npm run check:ui`).

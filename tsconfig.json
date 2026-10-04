@@ -17,8 +17,10 @@
   "include": [
     "src",
     "test",
+    "viewer",
     "vite.config.ts",
     "vitest.config.ts",
+    "playwright.config.ts",
     "eslint.config.js"
   ]
 }

@@ -46,6 +46,9 @@ in the same commit.
   structure). Never commit proprietary RAML exports.
 - Real corpora belong in `fixtures/local/` (git-ignored); the local harness runs
   against them when present and skips otherwise.
+- The README demo zip is generated from `examples/demo/` — edit the sources and
+  run `npm run demo:zip`. The README gif is re-recorded with `npm run demo:gif`
+  (needs `npx playwright install chromium` and `ffmpeg` on PATH).
 
 ## Design
 

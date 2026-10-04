@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-10-04
 
 ### Added
 
@@ -52,3 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   self-contained HTML file.
 - Viewer tests: Vitest + @testing-library/svelte component tests (`viewer/tests/`)
   and one Playwright drop-to-render smoke (`npm run check:ui`).
+- Synthetic demo export: sources in `examples/demo/`, generated zip
+  `examples/demo-inventory-api-1.0.0-raml.zip` (`npm run demo:zip`) — invented
+  content, safe to commit and distribute; used by the README tour and the
+  viewer demo recording.
+- `docs/requirement-tables.md`: the FR/NFR table grammar, conformance
+  diagnostics and configuration API.
+- README quick tour with a viewer demo GIF (`npm run demo:gif`: Playwright
+  recording + ffmpeg).

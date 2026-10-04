@@ -1,0 +1,78 @@
+#%RAML 1.0
+title: Demo Inventory API
+version: v1
+description: A synthetic demo API (all content invented) mimicking a MuleSoft Exchange export.
+documentation:
+  - !include docs/api_doc.raml
+protocols: [ HTTPS ]
+baseUri: https://demo.example.com/api
+mediaType: application/json
+
+uses:
+  SecuritySchemes: data-types/security.raml
+  localDataTypes: data-types/local/local_dataType_def.raml
+
+traits:
+  success_200: !include traits/success_200.raml
+
+securedBy: [ SecuritySchemes.clientIdEnforcement ]
+
+/items:
+  description: !include /overview_files/ov_items_get.md
+  get:
+    displayName: List items
+    description: Lists inventory items, optionally filtered by barcode.
+    queryParameters:
+      barcode:
+        type: string
+        description: Filter by barcode
+        example: "D-0001"
+    is: [ success_200: { recordType: localDataTypes.item } ]
+  post:
+    displayName: Create item
+    description: Creates an inventory item.
+    body:
+      type: localDataTypes.item
+      example: !include examples/item.json
+    responses:
+      201:
+        description: Created
+        body:
+          application/json:
+            type: localDataTypes.item
+            example: !include examples/item.json
+
+/items/{itemId}:
+  description: A single inventory item.
+  uriParameters:
+    itemId:
+      type: string
+      description: Item identifier
+      example: "D-0001"
+  get:
+    displayName: Get item
+    description: Fetch one item by identifier.
+    is: [ success_200: { recordType: localDataTypes.item } ]
+  /stock:
+    get:
+      displayName: Get stock level
+      description: Current stock level for the item.
+      responses:
+        200:
+          description: OK
+          body:
+            type: integer
+            example: 42
+
+/orders:
+  description: !include /overview_files/ov_orders_post.md
+  post:
+    displayName: Create order
+    description: Creates a fulfilment order for one or more items.
+    body:
+      type: localDataTypes.order
+      examples:
+        Standard: !include examples/order.json
+    responses:
+      202:
+        description: Accepted

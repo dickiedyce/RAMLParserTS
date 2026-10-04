@@ -9,6 +9,9 @@ schemes, and functional/non-functional requirements from description tables.
 > **Status: early development.** See [`DESIGN.md`](DESIGN.md) for the agreed
 > design and [`PARITY.md`](PARITY.md) for differences from the Swift original.
 
+![Viewer demo: drop a MuleSoft export, pick the root, browse endpoints and
+requirements](docs/assets/demo.gif)
+
 ## Features
 
 - Parses RAML 1.0 and OpenAPI 3.0/3.1 specifications
@@ -46,26 +49,56 @@ Or use the IIFE build from a plain `<script>` tag:
 
 ## Usage
 
-_(API stabilising — see `DESIGN.md` §9. This section fills in as the parser
-lands.)_
+```js
+import { discoverRoots, loadZip, parseFiles, parseSpec } from "raml-parser-ts";
+
+// One-shot from dropped files (zip or folder):
+const spec = await parseFiles(event.dataTransfer.files);
+console.log(spec.apiInfo.title, spec.endpoints.length);
+
+// Or step by step (e.g. to show a root picker):
+const vfs = loadZip(new Uint8Array(await file.arrayBuffer()));
+const roots = discoverRoots(vfs); // valid root candidates only
+const spec2 = parseSpec(vfs, roots[0]); // resolve + extract
+```
+
+`spec` is a plain JSON-serialisable `ParsedSpec` — `apiInfo`, `endpoints`,
+`requirements`, `diagnostics`. Non-fatal problems arrive as diagnostics; fatal
+ones throw `RamlParseError`. See `DESIGN.md` §9–§10 for the model and
+[`docs/requirement-tables.md`](docs/requirement-tables.md) for the FR/NFR
+extraction grammar.
+
+## Quick tour
+
+The gif above is a real recording of the bundled viewer. To reproduce it:
+
+1. `npm install && npm run build:ui` — builds `viewer/dist/index.html`, one
+   self-contained file.
+2. Open `viewer/dist/index.html` in a browser (from disk — no server needed).
+3. Drop [`examples/demo-inventory-api-1.0.0-raml.zip`](examples/demo-inventory-api-1.0.0-raml.zip)
+   onto the page — a synthetic MuleSoft-style export, all content invented.
+4. Pick `demo-inventory-api.raml` in the root picker (the zip also holds a tiny
+   OpenAPI root so the picker appears).
+5. Browse **Endpoints** (params, bodies, examples, security), **Requirements**
+   (FR/NFR tables with scope and `file:line` provenance), **Diagnostics** and
+   **Raw**.
+6. Export `endpoints.md` / `requirements.md`, or print the page.
+
+The demo zip is regenerated from [`examples/demo/`](examples/demo/) with
+`npm run demo:zip`; the gif is re-recorded with `npm run demo:gif` (Playwright
+recording + ffmpeg).
 
 ## Viewer
 
-A single-file Svelte viewer browses a dropped spec (folder or zip):
-Endpoints / Requirements / Diagnostics / Raw views, markdown exports
-(`endpoints.md`, `requirements.md`) and print styles. The built page is one
-self-contained HTML file that runs from disk, offline, with no backend — nothing
-leaves your machine.
+A single-file Svelte viewer for browsing a dropped spec (folder or zip), with
+markdown exports and print styles. The built page runs from disk, offline, with
+no backend — nothing leaves your machine.
 
 ```sh
 npm run dev:ui     # develop with hot reload
 npm run build:ui   # write viewer/dist/index.html (self-contained)
 npm run check:ui   # build + Playwright drop-to-render smoke
 ```
-
-Open `viewer/dist/index.html` in a browser and drop a MuleSoft export (folder
-or zip) onto it. When several root documents are present, pick one from the
-root picker.
 
 ## Development
 

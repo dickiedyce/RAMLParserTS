@@ -59,6 +59,12 @@ export default tseslint.config(
       "viewer/tests/**",
       "viewer/e2e/**",
     ],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
+    },
     rules: {
       "no-restricted-imports": "off",
       "no-restricted-globals": "off",

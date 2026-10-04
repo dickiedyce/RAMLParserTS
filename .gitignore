@@ -9,6 +9,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Intermediate demo recording (the derived GIF is committed)
+docs/assets/*.webm
+
 # Proprietary sample corpora — NEVER commit (DESIGN.md §8)
 # Real MuleSoft exports belong in fixtures/local/ or stay outside the repo.
 # Only synthetic demo zips (invented content) may be committed under examples/.

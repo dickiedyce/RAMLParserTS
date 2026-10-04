@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Proprietary sample corpora — NEVER commit (DESIGN.md §8)
+# Real MuleSoft exports belong in fixtures/local/ or stay outside the repo.
+# Only synthetic demo zips (invented content) may be committed under examples/.
+/fixtures/local/
+/examples/leap-*.zip
+
+# OS / editor noise
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# DevJournal project config contains a machine-local journal path
+.devjournal.toml

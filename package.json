@@ -1,0 +1,63 @@
+{
+  "name": "raml-parser-ts",
+  "version": "0.0.0",
+  "description": "Parse RAML 1.0 and OpenAPI 3.x specifications into structured data — in the browser. TypeScript port of RAMLParserKit.",
+  "keywords": [
+    "raml",
+    "openapi",
+    "parser",
+    "api",
+    "browser",
+    "static"
+  ],
+  "license": "MIT",
+  "author": "Richard Dyce",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dickiedyce/RAMLParserTS.git"
+  },
+  "homepage": "https://github.com/dickiedyce/RAMLParserTS#readme",
+  "bugs": {
+    "url": "https://github.com/dickiedyce/RAMLParserTS/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "unpkg": "./dist/raml-parser-ts.global.js",
+  "jsdelivr": "./dist/raml-parser-ts.global.js",
+  "scripts": {
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

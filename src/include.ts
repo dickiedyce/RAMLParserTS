@@ -9,6 +9,7 @@ import {
 
 import type { Diagnostic } from "./diagnostics.js";
 import { RamlParseError } from "./errors.js";
+import type { SourceMap } from "./model.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
 /**
@@ -24,10 +25,14 @@ export interface SpecTreeResult {
   diagnostics: Diagnostic[];
 }
 
-export function loadSpecTree(vfs: Vfs, rootPath: string): SpecTreeResult {
+export function loadSpecTree(
+  vfs: Vfs,
+  rootPath: string,
+  sources?: SourceMap,
+): SpecTreeResult {
   const diagnostics: Diagnostic[] = [];
   const path = normalizePath(rootPath);
-  const ctx: Ctx = { vfs, diagnostics, stack: [path] };
+  const ctx: Ctx = { vfs, diagnostics, stack: [path], sources };
   return { value: readAndParse(path, ctx), diagnostics };
 }
 
@@ -52,6 +57,8 @@ interface Ctx {
   diagnostics: Diagnostic[];
   /** Normalised paths of the include chain currently being parsed. */
   stack: string[];
+  /** Optional content → source-file map for provenance. */
+  sources?: SourceMap;
 }
 
 interface Env {
@@ -177,7 +184,14 @@ function resolveInclude(
 
   env.ctx.stack.push(resolved);
   try {
-    return readAndParse(resolved, env.ctx);
+    const value = readAndParse(resolved, env.ctx);
+    // Record provenance for raw-text includes (e.g. markdown descriptions);
+    // their full content is the value, so a requirement row's line within the
+    // value is its line within the source file.
+    if (typeof value === "string" && env.ctx.sources !== undefined) {
+      env.ctx.sources.set(value, resolved);
+    }
+    return value;
   } catch (e) {
     env.ctx.diagnostics.push({
       code: "include-error",

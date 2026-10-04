@@ -1,5 +1,6 @@
 import type { Diagnostic } from "./diagnostics.js";
 import { loadSpecTree } from "./include.js";
+import type { SourceMap } from "./model.js";
 import { deepClone, isRecord, stringifyValue } from "./util.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
@@ -34,6 +35,7 @@ interface ExpandCtx {
   rootTree: Record<string, unknown>;
   diagnostics: Diagnostic[];
   libCache: Map<string, Record<string, unknown> | null>;
+  sources?: SourceMap;
 }
 
 export function expandRaml(
@@ -41,6 +43,7 @@ export function expandRaml(
   vfs: Vfs,
   rootPath: string,
   diagnostics: Diagnostic[],
+  sources?: SourceMap,
 ): Record<string, unknown> {
   const ctx: ExpandCtx = {
     vfs,
@@ -48,6 +51,7 @@ export function expandRaml(
     rootTree: tree,
     diagnostics,
     libCache: new Map(),
+    sources,
   };
   inlineUses(ctx, tree, rootPath);
   walkResources(ctx, tree, "");
@@ -85,7 +89,7 @@ function loadLibrary(
     pushDiag(ctx, "library-not-found", `Library not found: ${path}`);
   } else {
     try {
-      const { value, diagnostics } = loadSpecTree(ctx.vfs, path);
+      const { value, diagnostics } = loadSpecTree(ctx.vfs, path, ctx.sources);
       ctx.diagnostics.push(...diagnostics);
       if (isRecord(value)) {
         result = value;

@@ -11,10 +11,40 @@ export type {
 } from "./diagnostics.js";
 export { RamlParseError } from "./errors.js";
 export type { RamlParseErrorCode, RamlParseErrorDetails } from "./errors.js";
+export { extractSpec } from "./extract.js";
 export { loadSpecTree } from "./include.js";
 export type { SpecTreeResult } from "./include.js";
 export { entriesFromFileList, loadFiles, loadZip } from "./loaders.js";
 export type { FileEntry } from "./loaders.js";
+export type {
+  APIInfo,
+  APIParameter,
+  APIResponse,
+  DocumentationItem,
+  Endpoint,
+  ExampleMap,
+  ParsedSpec,
+  RequestBody,
+  Requirement,
+  RequirementScope,
+  RequirementType,
+  ResponseBody,
+  SecurityScheme,
+  Source,
+  SourceMap,
+} from "./model.js";
+export { parseFiles, parseSpec } from "./parse.js";
+export type { ParseFilesOptions } from "./parse.js";
+export {
+  defaultRequirementConfig,
+  parseRequirementTables,
+} from "./requirements.js";
+export type {
+  ParsedRequirementRow,
+  RequirementTableConfig,
+  TableDiagnostic,
+  TableParseResult,
+} from "./requirements.js";
 export { discoverRoots, resolveSpec } from "./resolve.js";
 export type { ResolvedSpec, SpecFormat } from "./resolve.js";
 export { createVfs, normalizePath, resolveIncludePath } from "./vfs.js";

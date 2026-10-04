@@ -28,3 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paths missing a leading `/` (MuleSoft export quirk).
 - Project scaffold: MIT licence, build tooling (Vite, TypeScript strict, Vitest,
   ESLint with a Node-builtin ban for library code), `RamlParseError`.
+- C-hybrid data model (`src/model.ts`): `APIInfo`, `Endpoint`, `APIParameter`,
+  `APIResponse`/`RequestBody`, `Requirement`, `SecurityScheme` — JSON-serializable
+  plain data with additive fields (PARITY.md A1–A9): baseUri/protocols/mediaType/
+  documentation, request bodies, response examples, numeric facets + JSON-shaped
+  examples + string constraints, `securitySchemeIds`, `scope` + `source`
+  provenance, `resourceDescription`, and `diagnostics`.
+- Extraction (`extractSpec`): RAML + OpenAPI endpoint builders — resource-chain
+  `uriParameters`, method `queryParameters`/`headers` (required defaults `false`),
+  request/response bodies with named examples, security-scheme resolution and
+  `securedBy`/`security` inheritance (`[null]` → explicit anonymous).
+- Requirement-table extractor (`parseRequirementTables`): configurable FR/NFR
+  grammar (headings + columns), optional NFR acceptance column, escaped-pipe
+  splitting, strict diagnostics that never drop a non-conforming row silently.
+- Provenance: `SourceMap` records which file an `!include`d text came from;
+  requirements carry `source { file, line }` and `scope: "resource" | "method"`.
+- `parseSpec()` / `parseFiles()` composition entry points (VFS/zip/FileList →
+  resolved + extracted `ParsedSpec`).

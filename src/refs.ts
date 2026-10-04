@@ -1,5 +1,6 @@
 import type { Diagnostic } from "./diagnostics.js";
 import { loadSpecTree } from "./include.js";
+import type { SourceMap } from "./model.js";
 import { isRecord } from "./util.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
@@ -21,6 +22,7 @@ interface RefCtx {
   diagnostics: Diagnostic[];
   docs: Map<string, unknown>;
   rootPath: string;
+  sources?: SourceMap;
 }
 
 export function resolveRefs(
@@ -28,12 +30,14 @@ export function resolveRefs(
   vfs: Vfs,
   rootPath: string,
   diagnostics: Diagnostic[],
+  sources?: SourceMap,
 ): Record<string, unknown> {
   const ctx: RefCtx = {
     vfs,
     diagnostics,
     docs: new Map([[rootPath, tree]]),
     rootPath,
+    sources,
   };
   return walk(ctx, tree, rootPath, "", [`${rootPath}#`]) as Record<
     string,
@@ -142,7 +146,7 @@ function resolveRefNode(
 
 function docFor(ctx: RefCtx, file: string): unknown {
   if (!ctx.docs.has(file)) {
-    const { value, diagnostics } = loadSpecTree(ctx.vfs, file);
+    const { value, diagnostics } = loadSpecTree(ctx.vfs, file, ctx.sources);
     ctx.diagnostics.push(...diagnostics);
     ctx.docs.set(file, value);
   }

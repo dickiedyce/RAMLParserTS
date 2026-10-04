@@ -2,6 +2,7 @@ import type { Diagnostic } from "./diagnostics.js";
 import { RamlParseError } from "./errors.js";
 import { expandRaml } from "./expand.js";
 import { loadSpecTree } from "./include.js";
+import type { SourceMap } from "./model.js";
 import { resolveRefs } from "./refs.js";
 import { isRecord } from "./util.js";
 import { normalizePath, type Vfs } from "./vfs.js";
@@ -14,6 +15,8 @@ export interface ResolvedSpec {
   /** Fully resolved tree: includes expanded, plus traits/$refs per format. */
   tree: Record<string, unknown>;
   diagnostics: Diagnostic[];
+  /** Content → source-file provenance for included raw text. */
+  sources: SourceMap;
 }
 
 const RAML_HEADER = /^#%RAML\s+(\d+\.\d+)\s*(.*?)\s*$/;
@@ -28,7 +31,8 @@ const RAML_HEADER = /^#%RAML\s+(\d+\.\d+)\s*(.*?)\s*$/;
 export function resolveSpec(vfs: Vfs, rootPath: string): ResolvedSpec {
   const path = normalizePath(rootPath);
   const raw = vfs.read(path);
-  const { value, diagnostics } = loadSpecTree(vfs, path);
+  const sources: SourceMap = new Map();
+  const { value, diagnostics } = loadSpecTree(vfs, path, sources);
   if (!isRecord(value)) {
     throw new RamlParseError(
       "invalid-yaml",
@@ -39,9 +43,9 @@ export function resolveSpec(vfs: Vfs, rootPath: string): ResolvedSpec {
   const format = detectFormat(raw, value, path, diagnostics);
   const tree =
     format === "raml1"
-      ? expandRaml(value, vfs, path, diagnostics)
-      : resolveRefs(value, vfs, path, diagnostics);
-  return { format, tree, diagnostics };
+      ? expandRaml(value, vfs, path, diagnostics, sources)
+      : resolveRefs(value, vfs, path, diagnostics, sources);
+  return { format, tree, diagnostics, sources };
 }
 
 /**

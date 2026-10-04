@@ -6,11 +6,10 @@ in the browser, with no backend and no Node runtime.
 Extracted data includes API info, endpoints, parameters, responses, security
 schemes, and functional/non-functional requirements from description tables.
 
-> **Status: early development.** See [`DESIGN.md`](DESIGN.md) for the agreed
-> design and [`PARITY.md`](PARITY.md) for differences from the Swift original.
+> **Status: early development.** See [`DESIGN.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/DESIGN.md) for the agreed
+> design and [`PARITY.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/PARITY.md) for differences from the Swift original.
 
-![Viewer demo: drop a MuleSoft export, pick the root, browse endpoints and
-requirements](docs/assets/demo.gif)
+![Viewer demo: drop a MuleSoft export, pick the root, browse endpoints and requirements](https://raw.githubusercontent.com/dickiedyce/RAMLParserTS/main/docs/assets/demo.gif)
 
 ## Features
 
@@ -64,8 +63,8 @@ const spec2 = parseSpec(vfs, roots[0]); // resolve + extract
 
 `spec` is a plain JSON-serialisable `ParsedSpec` — `apiInfo`, `endpoints`,
 `requirements`, `diagnostics`. Non-fatal problems arrive as diagnostics; fatal
-ones throw `RamlParseError`. See `DESIGN.md` §9–§10 for the model and
-[`docs/requirement-tables.md`](docs/requirement-tables.md) for the FR/NFR
+ones throw `RamlParseError`. See [`DESIGN.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/DESIGN.md) §9–§10 for the model and
+[`docs/requirement-tables.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/docs/requirement-tables.md) for the FR/NFR
 extraction grammar.
 
 ## Quick tour
@@ -75,7 +74,7 @@ The gif above is a real recording of the bundled viewer. To reproduce it:
 1. `npm install && npm run build:ui` — builds `viewer/dist/index.html`, one
    self-contained file.
 2. Open `viewer/dist/index.html` in a browser (from disk — no server needed).
-3. Drop [`examples/demo-inventory-api-1.0.0-raml.zip`](examples/demo-inventory-api-1.0.0-raml.zip)
+3. Drop [`examples/demo-inventory-api-1.0.0-raml.zip`](https://github.com/dickiedyce/RAMLParserTS/raw/main/examples/demo-inventory-api-1.0.0-raml.zip)
    onto the page — a synthetic MuleSoft-style export, all content invented.
 4. Pick `demo-inventory-api.raml` in the root picker (the zip also holds a tiny
    OpenAPI root so the picker appears).
@@ -84,7 +83,7 @@ The gif above is a real recording of the bundled viewer. To reproduce it:
    **Raw**.
 6. Export `endpoints.md` / `requirements.md`, or print the page.
 
-The demo zip is regenerated from [`examples/demo/`](examples/demo/) with
+The demo zip is regenerated from [`examples/demo/`](https://github.com/dickiedyce/RAMLParserTS/tree/main/examples/demo) with
 `npm run demo:zip`; the gif is re-recorded with `npm run demo:gif` (Playwright
 recording + ffmpeg).
 
@@ -107,7 +106,7 @@ npm install
 npm run check   # typecheck + lint + tests + build
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). No CI is configured — run
+See [`CONTRIBUTING.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/CONTRIBUTING.md). No CI is configured — run
 `npm run check` before pushing. The Playwright smoke (`npm run check:ui`) needs
 `npx playwright install chromium` once first.
 
@@ -118,4 +117,4 @@ Richard Dyce (MIT, Swift).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](https://github.com/dickiedyce/RAMLParserTS/blob/main/LICENSE).

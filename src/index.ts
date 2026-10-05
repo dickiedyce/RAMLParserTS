@@ -16,6 +16,16 @@ export { loadSpecTree } from "./include.js";
 export type { SpecTreeResult } from "./include.js";
 export { entriesFromFileList, loadFiles, loadZip } from "./loaders.js";
 export type { FileEntry } from "./loaders.js";
+export { lintSpec } from "./lint.js";
+export type {
+  LintFinding,
+  LintOptions,
+  LintReport,
+  LintRuleConfig,
+  LintRuleId,
+  LintTarget,
+  LintTargetKind,
+} from "./lint.js";
 export type {
   APIInfo,
   APIParameter,

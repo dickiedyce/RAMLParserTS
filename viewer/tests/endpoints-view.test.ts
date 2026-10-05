@@ -1,11 +1,28 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { LintFinding } from "../../src/index.js";
 import EndpointsView from "../src/views/EndpointsView.svelte";
 import { makeSpec } from "./fixtures.js";
 
 afterEach(cleanup);
+
+const getFindings: LintFinding[] = [
+  {
+    code: "parameter-missing-example",
+    severity: "info",
+    message: "Parameter limit on GET /trials has no example",
+    path: "api.raml",
+    line: 20,
+    target: {
+      kind: "parameter",
+      endpointPath: "/trials",
+      method: "GET",
+      name: "limit",
+    },
+  },
+];
 
 describe("EndpointsView", () => {
   it("renders resources, method headings and descriptions", () => {
@@ -59,5 +76,26 @@ describe("EndpointsView", () => {
     spec.endpoints = [];
     render(EndpointsView, { props: { spec } });
     expect(screen.getByText("No endpoints found.")).toBeTruthy();
+  });
+
+  it("badges entities that have lint findings", () => {
+    render(EndpointsView, {
+      props: { spec: makeSpec(), findings: getFindings },
+    });
+    // The limit parameter row carries the badge; id/verbose do not.
+    expect(screen.getAllByText("no example").length).toBe(1);
+    expect(screen.getByText("limit")).toBeTruthy();
+  });
+
+  it("filters to endpoints with findings when the toggle is on", async () => {
+    render(EndpointsView, {
+      props: { spec: makeSpec(), findings: getFindings },
+    });
+    expect(screen.getByText("POST /trials")).toBeTruthy();
+    await fireEvent.click(
+      screen.getByLabelText("Only endpoints with findings"),
+    );
+    expect(screen.queryByText("POST /trials")).toBeNull();
+    expect(screen.getByText("GET /trials")).toBeTruthy();
   });
 });

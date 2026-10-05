@@ -92,6 +92,7 @@ export const postEndpoint: Endpoint = {
 
 export function makeSpec(): ParsedSpec {
   return {
+    format: "raml1",
     apiInfo: {
       title: "Trials API",
       version: "v1",

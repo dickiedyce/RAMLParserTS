@@ -13,6 +13,9 @@
 
 import type { Diagnostic } from "./diagnostics.js";
 
+/** Supported spec formats (DESIGN.md §4). */
+export type SpecFormat = "raml1" | "openapi3";
+
 /** Provenance of a requirement (additive, A6). `line` is 1-based. */
 export interface Source {
   /** VFS path the text came from, when known (e.g. an `!include`d markdown). */
@@ -35,6 +38,8 @@ export interface SecurityScheme {
   /** HTTP auth scheme (`bearer`, `basic`), when applicable (OAS). */
   scheme?: string;
   description: string;
+  /** Where the scheme's key was written (additive, A10). */
+  source?: Source;
 }
 
 /**
@@ -61,6 +66,8 @@ export interface APIParameter {
   maxLength?: number;
   /** String constraint (A4). */
   pattern?: string;
+  /** Where the parameter's key was written (additive, A10). */
+  source?: Source;
 }
 
 /** Named examples keyed by example name (single examples use the key `example`). */
@@ -73,6 +80,8 @@ export interface RequestBody {
   /** Type declaration, carried as written. */
   type?: string;
   examples: ExampleMap;
+  /** Where the body key was written (additive, A10). */
+  source?: Source;
 }
 
 /** Response body (additive, A3). Swift's `contentType` maps from `contentType`. */
@@ -90,6 +99,8 @@ export interface APIResponse {
   description: string;
   /** Absent when the response declares no body (e.g. `204`). */
   body?: ResponseBody;
+  /** Where the status key was written (additive, A10). */
+  source?: Source;
 }
 
 /** A functional / non-functional requirement scraped from a description table. */
@@ -133,6 +144,8 @@ export interface Endpoint {
   requirements: Requirement[];
   /** Ids referencing {@link APIInfo.securitySchemes} (A5, was `securitySchemes`). */
   securitySchemeIds: string[];
+  /** Where the method key was written (additive, A10). */
+  source?: Source;
 }
 
 /** A `documentation:` entry (additive, A1). */
@@ -156,6 +169,8 @@ export interface APIInfo {
   documentation: DocumentationItem[];
   /** Auth schemes keyed by id (Swift parity: keyed by name). */
   securitySchemes: Record<string, SecurityScheme>;
+  /** Where the `title` key was written (additive, A10). */
+  source?: Source;
 }
 
 /**
@@ -167,4 +182,6 @@ export interface ParsedSpec {
   endpoints: Endpoint[];
   requirements: Requirement[];
   diagnostics: Diagnostic[];
+  /** Detected format (additive, A11); lets lint rules self-skip per format. */
+  format: SpecFormat;
 }

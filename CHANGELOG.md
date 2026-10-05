@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Documentation-omission linter: `lintSpec(parsed, options?)` with 12 rules
+  (missing descriptions, examples, documentation section, responses,
+  requirement gaps), per-rule enable/severity overrides, structured finding
+  targets, and rule self-skip for inapplicable formats (DESIGN.md §18).
+- Key-level provenance: `source { file, line }` on `APIInfo`, `Endpoint`,
+  `APIParameter`, `APIResponse`, `RequestBody` and `SecurityScheme`, plus
+  `ParsedSpec.format` (additive A10/A11).
+- Viewer: **Lint** tab, inline lint badges on endpoint cards, "Only endpoints
+  with findings" filter, and `lint.md` export.
+
 ## [0.1.1] - 2026-10-04
 
 ### Added

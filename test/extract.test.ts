@@ -140,11 +140,13 @@ describe("RAML extraction", () => {
       contentType: "application/json",
       type: "PingRequest",
       examples: { One: { msg: "hi" } },
+      source: { file: "api.raml", line: 6 },
     });
     expect(post?.responses).toEqual([
       {
         statusCode: "201",
         description: "Created",
+        source: { file: "api.raml", line: 12 },
         body: {
           contentType: "application/json",
           type: "PingResponse",
@@ -180,6 +182,7 @@ describe("RAML extraction", () => {
     expect(spec.apiInfo.securitySchemes["clientId"]).toEqual({
       type: "Client ID Enforcement",
       description: "Needs a client id",
+      source: { file: "api.raml", line: 7 },
     });
     const byPath = Object.fromEntries(spec.endpoints.map((e) => [e.path, e]));
     expect(byPath["/a"]?.securitySchemeIds).toEqual(["clientId"]);
@@ -328,6 +331,7 @@ describe("OpenAPI extraction", () => {
     expect(spec.apiInfo.securitySchemes["apiKey"]).toEqual({
       type: "apiKey",
       description: "API key auth",
+      source: { file: "openapi.json", line: 1 },
     });
 
     const byKey = Object.fromEntries(
@@ -346,6 +350,7 @@ describe("OpenAPI extraction", () => {
     expect(get?.responses[0]).toEqual({
       statusCode: "200",
       description: "OK",
+      source: { file: "openapi.json", line: 1 },
       body: {
         contentType: "application/json",
         type: "object",
@@ -358,6 +363,7 @@ describe("OpenAPI extraction", () => {
       contentType: "application/json",
       type: "object",
       examples: { Sample: { id: "2" } },
+      source: { file: "openapi.json", line: 1 },
     });
     // operation `security: []` overrides the root -> explicit empty list.
     expect(post?.securitySchemeIds).toEqual([]);

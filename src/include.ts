@@ -9,7 +9,8 @@ import {
 
 import type { Diagnostic } from "./diagnostics.js";
 import { RamlParseError } from "./errors.js";
-import type { SourceMap } from "./model.js";
+import type { Source, SourceMap } from "./model.js";
+import { setKeyPos } from "./positions.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
 /**
@@ -77,18 +78,30 @@ function extension(path: string): string {
 function readAndParse(path: string, ctx: Ctx): unknown {
   const content = ctx.vfs.read(path);
   const ext = extension(path);
-  if (ext === "json") return JSON.parse(content) as unknown;
+  if (ext === "json") {
+    // JSON is validated with JSON.parse (error semantics unchanged), then
+    // parsed with the YAML 1.2 parser — JSON is a YAML subset — so keys carry
+    // file/line provenance like any other document (DESIGN.md §18).
+    JSON.parse(content);
+    return parseYamlFile(path, content, ctx, false);
+  }
   if (ext === "raml" || ext === "yaml" || ext === "yml") {
     return parseYamlFile(path, content, ctx);
   }
   return content;
 }
 
-function parseYamlFile(path: string, content: string, ctx: Ctx): unknown {
+function parseYamlFile(
+  path: string,
+  content: string,
+  ctx: Ctx,
+  uniqueKeys = true,
+): unknown {
   const lineCounter = new LineCounter();
   const doc = parseDocument(content, {
     customTags: [includeTag],
     lineCounter,
+    uniqueKeys,
   });
   const err = doc.errors[0];
   if (err !== undefined) {
@@ -119,7 +132,9 @@ function buildNode(node: unknown, env: Env): unknown {
   if (isMap(node)) {
     const out: Record<string, unknown> = {};
     for (const pair of node.items) {
-      out[String(buildNode(pair.key, env))] = buildNode(pair.value, env);
+      const key = String(buildNode(pair.key, env));
+      out[key] = buildNode(pair.value, env);
+      setKeyPos(out, key, sourceOf(pair.key, env));
     }
     return out;
   }
@@ -131,6 +146,17 @@ function buildNode(node: unknown, env: Env): unknown {
     return target === null ? null : buildNode(target, env);
   }
   return null;
+}
+
+/** Source of a mapping key node, when its position is known. */
+function sourceOf(keyNode: unknown, env: Env): Source | undefined {
+  const node =
+    isScalar(keyNode) || isMap(keyNode) || isSeq(keyNode) || isAlias(keyNode)
+      ? keyNode
+      : undefined;
+  const offset = node?.range?.[0];
+  if (offset === undefined) return undefined;
+  return { file: env.filePath, line: env.lineCounter.linePos(offset).line };
 }
 
 function resolveInclude(

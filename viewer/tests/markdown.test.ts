@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { LintFinding } from "../../src/index.js";
 import {
   buildEndpointsMarkdown,
+  buildLintMarkdown,
   buildRequirementsMarkdown,
   escapeCell,
 } from "../src/lib/markdown.js";
@@ -55,6 +57,48 @@ describe("buildEndpointsMarkdown", () => {
   it("lists attached requirements", () => {
     expect(md).toContain("- [FR] FR-S-G-01 (resource): Get firewall flag");
     expect(md).toContain("- [NFR] NFR-M-01 (method): Respond within 2s");
+  });
+});
+
+describe("buildLintMarkdown", () => {
+  const findings: LintFinding[] = [
+    {
+      code: "parameter-missing-example",
+      severity: "info",
+      message: "Parameter limit on GET /trials has no example",
+      path: "api.raml",
+      line: 20,
+      target: {
+        kind: "parameter",
+        endpointPath: "/trials",
+        method: "GET",
+        name: "limit",
+      },
+    },
+    {
+      code: "api-info-missing-description",
+      severity: "warning",
+      message: "API info has no description",
+      path: "api.raml",
+      line: 1,
+      target: { kind: "api-info" },
+    },
+  ];
+
+  it("groups findings by severity, warnings first, with target and location", () => {
+    const md = buildLintMarkdown(makeSpec(), findings);
+    expect(md).toContain("# Lint: Trials API v1");
+    expect(md.indexOf("## Warnings")).toBeLessThan(md.indexOf("## Info"));
+    expect(md).toContain("api-info-missing-description");
+    expect(md).toContain("API info has no description");
+    expect(md).toContain("api.raml:1");
+    expect(md).toContain('GET /trials · parameter "limit"');
+    expect(md).toContain("api.raml:20");
+  });
+
+  it("renders a clean checklist when there are no findings", () => {
+    const md = buildLintMarkdown(makeSpec(), []);
+    expect(md).toContain("No lint findings.");
   });
 });
 

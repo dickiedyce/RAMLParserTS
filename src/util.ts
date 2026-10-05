@@ -1,14 +1,17 @@
+import { copyKeyPos } from "./positions.js";
+
 /** True for plain mapping-like objects (not arrays, not null). */
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Structural deep copy of JSON-like values. */
+/** Structural deep copy of JSON-like values (key provenance is carried over). */
 export function deepClone<T>(value: T): T {
   if (Array.isArray(value)) return value.map((item) => deepClone(item)) as T;
   if (isRecord(value)) {
     const out: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(value)) out[key] = deepClone(item);
+    copyKeyPos(value, out);
     return out as T;
   }
   return value;

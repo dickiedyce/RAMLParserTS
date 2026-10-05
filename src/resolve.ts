@@ -2,14 +2,13 @@ import type { Diagnostic } from "./diagnostics.js";
 import { RamlParseError } from "./errors.js";
 import { expandRaml } from "./expand.js";
 import { loadSpecTree } from "./include.js";
-import type { SourceMap } from "./model.js";
+import type { SourceMap, SpecFormat } from "./model.js";
 import { resolveRefs } from "./refs.js";
 import { isRecord } from "./util.js";
 import { normalizePath, type Vfs } from "./vfs.js";
 
 /** Spec flavour detected from the root document. */
-export type SpecFormat = "raml1" | "openapi3";
-
+export type { SpecFormat } from "./model.js";
 export interface ResolvedSpec {
   format: SpecFormat;
   /** Fully resolved tree: includes expanded, plus traits/$refs per format. */

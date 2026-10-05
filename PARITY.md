@@ -35,17 +35,19 @@ Fields present in TS model but not in Swift's. The golden harness compares via a
 **TS→Swift projection**; these fields are stripped by the projection and asserted
 separately.
 
-| #   | Addition                                                                 | Justification                                                          |
-| --- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| A1  | `APIInfo.baseUri / protocols / mediaType / documentation[]`              | Present in sample export root RAML; viewer needs them                  |
-| A2  | `Endpoint.requestBody { type, examples }`                                | Swift `Endpoint` has no request body; sample exports always define one |
-| A3  | `APIResponse.examples[]`                                                 | Response bodies carry examples in exports                              |
-| A4  | `APIParameter` numeric facets, JSON-shaped `example`, string constraints | Swift `Int?` facets and stringified examples are lossy                 |
-| A5  | `Endpoint.securitySchemeIds` referencing `SecurityScheme` objects        | Removes Swift's duplicated bare-string scheme lists                    |
-| A6  | `Requirement.scope: "resource" \| "method"` + `source { file, line }`    | Provenance and requirement attachment semantics (Q5 #5, Q24)           |
-| A7  | `schemaType` renamed to `type`                                           | Swift name misleads                                                    |
-| A8  | `Endpoint.resourceDescription` (resource-level description)              | Q24-B: distinct from method `description` when sourcing requirements   |
-| A9  | `ParsedSpec.diagnostics` (resolution + extraction diagnostics)           | DESIGN.md §9: diagnostics ride along in every result                   |
+| #   | Addition                                                                                                    | Justification                                                          |
+| --- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| A1  | `APIInfo.baseUri / protocols / mediaType / documentation[]`                                                 | Present in sample export root RAML; viewer needs them                  |
+| A2  | `Endpoint.requestBody { type, examples }`                                                                   | Swift `Endpoint` has no request body; sample exports always define one |
+| A3  | `APIResponse.examples[]`                                                                                    | Response bodies carry examples in exports                              |
+| A4  | `APIParameter` numeric facets, JSON-shaped `example`, string constraints                                    | Swift `Int?` facets and stringified examples are lossy                 |
+| A5  | `Endpoint.securitySchemeIds` referencing `SecurityScheme` objects                                           | Removes Swift's duplicated bare-string scheme lists                    |
+| A6  | `Requirement.scope: "resource" \| "method"` + `source { file, line }`                                       | Provenance and requirement attachment semantics (Q5 #5, Q24)           |
+| A7  | `schemaType` renamed to `type`                                                                              | Swift name misleads                                                    |
+| A8  | `Endpoint.resourceDescription` (resource-level description)                                                 | Q24-B: distinct from method `description` when sourcing requirements   |
+| A9  | `ParsedSpec.diagnostics` (resolution + extraction diagnostics)                                              | DESIGN.md §9: diagnostics ride along in every result                   |
+| A10 | `source { file, line }` on `APIInfo`/`Endpoint`/`APIParameter`/`APIResponse`/`RequestBody`/`SecurityScheme` | Key-level provenance for lint findings (DESIGN.md §18)                 |
+| A11 | `ParsedSpec.format: SpecFormat`                                                                             | Lets lint rules self-skip per format (DESIGN.md §18)                   |
 
 Removed vs Swift: `id: UUID` on all models (Swift `Identifiable` artifact;
 JSON-serializable output rule, Q14).
@@ -61,6 +63,7 @@ JSON-serializable output rule, Q14).
 | `APIParameter.example`              | `String(describing:)` form (see `swiftDescribe`)                                                              |
 | `APIResponse.contentType`           | `body.contentType`                                                                                            |
 | `Requirement.*`                     | same names minus `scope`, `source`                                                                            |
+| `source` (A10) / `format` (A11)     | ignored by the projection — TS-only lint provenance, no golden impact                                         |
 | ordering                            | keyed alignment by natural key — ordering ignored (Swift output is unordered)                                 |
 
 ## Golden corpus

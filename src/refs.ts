@@ -1,6 +1,7 @@
 import type { Diagnostic } from "./diagnostics.js";
 import { loadSpecTree } from "./include.js";
 import type { SourceMap } from "./model.js";
+import { copyKeyPos, mergeRecords, setKeyPos, keyPos } from "./positions.js";
 import { isRecord } from "./util.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
@@ -83,6 +84,7 @@ function walk(
       here,
     );
   }
+  copyKeyPos(node, out);
   return out;
 }
 
@@ -130,7 +132,7 @@ function resolveRefNode(
   const siblings = Object.entries(node).filter(([name]) => name !== "$ref");
   if (siblings.length === 0) return value;
   const base: Record<string, unknown> = isRecord(value)
-    ? { ...value }
+    ? mergeRecords(value)
     : { value };
   for (const [name, item] of siblings) {
     base[name] = walk(
@@ -140,6 +142,7 @@ function resolveRefNode(
       `${pointer}/${escapeSegment(name)}`,
       chain,
     );
+    setKeyPos(base, name, keyPos(node, name));
   }
   return base;
 }

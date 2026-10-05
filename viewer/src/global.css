@@ -166,6 +166,47 @@ pre {
     color: #566573;
 }
 
+.lint-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+    color: #566573;
+}
+
+.lint-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.lint-badge.sev-warning {
+    background: #fdf0d5;
+    color: #8a5a00;
+    border: 1px solid #e8c476;
+}
+
+.lint-badge.sev-info {
+    background: #e3f0fb;
+    color: #1c5c96;
+    border: 1px solid #a9cbe8;
+}
+
+.lint-row td {
+    background: #fafbfc;
+    padding: 0.25rem 0.55rem;
+}
+
+.rule-label {
+    display: block;
+    color: #566573;
+    font-size: 0.8rem;
+}
+
 @media print {
     .no-print {
         display: none !important;

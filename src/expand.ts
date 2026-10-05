@@ -1,6 +1,7 @@
 import type { Diagnostic } from "./diagnostics.js";
 import { loadSpecTree } from "./include.js";
 import type { SourceMap } from "./model.js";
+import { keyPos, mergeRecords, setKeyPos } from "./positions.js";
 import { deepClone, isRecord, stringifyValue } from "./util.js";
 import { normalizePath, resolveIncludePath, type Vfs } from "./vfs.js";
 
@@ -193,11 +194,9 @@ function substitute(
   if (isRecord(node)) {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(node)) {
-      out[substituteString(ctx, key, params, true)] = substitute(
-        ctx,
-        value,
-        params,
-      );
+      const name = substituteString(ctx, key, params, true);
+      out[name] = substitute(ctx, value, params);
+      setKeyPos(out, name, keyPos(node, key));
     }
     return out;
   }
@@ -262,7 +261,7 @@ function buildContribution(
 ): Record<string, unknown> | null {
   const sub = substitute(ctx, body, { ...implicit, ...params });
   if (!isRecord(sub)) return null;
-  const result = { ...sub };
+  const result = mergeRecords(sub);
   const nested = parseRefList(result["is"]);
   delete result["is"];
   for (const ref of nested) {
@@ -343,6 +342,10 @@ function expandResource(
         const existing = typeContribs.get(method);
         if (existing !== undefined) mergeUnder(existing, contrib);
         else typeContribs.set(method, contrib);
+        // The method key itself is defined in the library's resource type.
+        if (keyPos(res, method) === undefined) {
+          setKeyPos(res, method, keyPos(found.body, key));
+        }
       } else {
         // Non-method keys (description, uriParameters, ...) land on the
         // resource itself; the resource's own properties win.
@@ -361,8 +364,9 @@ function expandResource(
     ...typeContribs.keys(),
   ]);
   for (const method of methodKeys) {
-    const explicit: Record<string, unknown> = isRecord(res[method])
-      ? { ...(res[method] as Record<string, unknown>) }
+    const current = res[method];
+    const explicit: Record<string, unknown> = isRecord(current)
+      ? mergeRecords(current)
       : {};
     const methodIs = parseRefList(explicit["is"]);
     delete explicit["is"];
@@ -422,6 +426,7 @@ function mergeUnder(
     const existing = target[key];
     if (existing === undefined) {
       target[key] = deepClone(value);
+      setKeyPos(target, key, keyPos(source, key));
     } else if (isRecord(existing) && isRecord(value)) {
       mergeUnder(existing, value);
     }

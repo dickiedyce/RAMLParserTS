@@ -4,26 +4,30 @@
     discoverRoots,
     entriesFromFileList,
     extractSpec,
+    lintSpec,
     loadFiles,
     loadZip,
     resolveSpec,
   } from "../../src/index.js";
-  import type { ParsedSpec, Vfs } from "../../src/index.js";
+  import type { LintReport, ParsedSpec, Vfs } from "../../src/index.js";
   import {
     buildEndpointsMarkdown,
+    buildLintMarkdown,
     buildRequirementsMarkdown,
   } from "./lib/markdown.js";
   import DiagnosticsView from "./views/DiagnosticsView.svelte";
   import EndpointsView from "./views/EndpointsView.svelte";
+  import LintView from "./views/LintView.svelte";
   import RawView from "./views/RawView.svelte";
   import RequirementsView from "./views/RequirementsView.svelte";
 
-  type View = "endpoints" | "requirements" | "diagnostics" | "raw";
+  type View = "endpoints" | "requirements" | "lint" | "diagnostics" | "raw";
 
   let vfs: Vfs | null = $state(null);
   let roots: string[] = $state([]);
   let rootPath: string | null = $state(null);
   let spec: ParsedSpec | null = $state(null);
+  let lint: LintReport | null = $state(null);
   let tree: Record<string, unknown> | null = $state(null);
   let error: string | null = $state(null);
   let view: View = $state("endpoints");
@@ -31,6 +35,7 @@
   async function ingest(files: ArrayLike<File>): Promise<void> {
     error = null;
     spec = null;
+    lint = null;
     tree = null;
     rootPath = null;
     try {
@@ -64,6 +69,7 @@
       const resolved = resolveSpec(vfs, path);
       tree = resolved.tree;
       spec = extractSpec(resolved);
+      lint = lintSpec(spec);
       rootPath = path;
       view = "endpoints";
       error = null;
@@ -77,6 +83,7 @@
     roots = [];
     rootPath = null;
     spec = null;
+    lint = null;
     tree = null;
     error = null;
     view = "endpoints";
@@ -116,6 +123,12 @@
   function exportRequirements(): void {
     if (spec !== null) download("requirements.md", buildRequirementsMarkdown(spec));
   }
+
+  function exportLint(): void {
+    if (spec !== null && lint !== null) {
+      download("lint.md", buildLintMarkdown(spec, lint.findings));
+    }
+  }
 </script>
 
 <main>
@@ -129,12 +142,14 @@
       <nav class="tabs" aria-label="Views">
         <button class:active={view === "endpoints"} onclick={() => (view = "endpoints")}>Endpoints</button>
         <button class:active={view === "requirements"} onclick={() => (view = "requirements")}>Requirements</button>
+        <button class:active={view === "lint"} onclick={() => (view = "lint")}>Lint</button>
         <button class:active={view === "diagnostics"} onclick={() => (view = "diagnostics")}>Diagnostics</button>
         <button class:active={view === "raw"} onclick={() => (view = "raw")}>Raw</button>
       </nav>
       <div class="actions">
         <button onclick={exportEndpoints}>Export endpoints.md</button>
         <button onclick={exportRequirements}>Export requirements.md</button>
+        <button onclick={exportLint}>Export lint.md</button>
         <button onclick={() => window.print()}>Print</button>
         <button onclick={reset}>Start over</button>
       </div>
@@ -183,9 +198,11 @@
     {/if}
   {:else}
     {#if view === "endpoints"}
-      <EndpointsView spec={spec} />
+      <EndpointsView spec={spec} findings={lint?.findings ?? []} />
     {:else if view === "requirements"}
       <RequirementsView spec={spec} />
+    {:else if view === "lint"}
+      <LintView findings={lint?.findings ?? []} />
     {:else if view === "diagnostics"}
       <DiagnosticsView diagnostics={spec.diagnostics} />
     {:else}

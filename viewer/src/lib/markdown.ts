@@ -8,10 +8,12 @@ import type {
   APIResponse,
   Endpoint,
   ExampleMap,
+  LintFinding,
   ParsedSpec,
 } from "../../../src/index.js";
 import { formatConstraints, formatExample, sourceLabel } from "./format.js";
 import { groupEndpoints } from "./group.js";
+import { findingLocation, targetLabel } from "./lint.js";
 
 interface BodyLike {
   contentType?: string;
@@ -160,6 +162,44 @@ export function buildRequirementsMarkdown(spec: ParsedSpec): string {
     for (const r of rows) {
       lines.push(
         `| ${escapeCell(r.reqId)} | ${escapeCell(r.useCase)} | ${escapeCell(r.description)} | ${escapeCell(r.acceptanceCriteria)} | ${r.scope} | ${escapeCell(sourceLabel(r))} |`,
+      );
+    }
+    lines.push("");
+  }
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+/** Standalone lint checklist (DESIGN.md §18): grouped by severity, warnings first. */
+export function buildLintMarkdown(
+  spec: ParsedSpec,
+  findings: LintFinding[],
+): string {
+  const title =
+    spec.apiInfo.version !== ""
+      ? `${spec.apiInfo.title} ${spec.apiInfo.version}`
+      : spec.apiInfo.title;
+  const lines = [`# Lint: ${title}`, ""];
+  if (findings.length === 0) {
+    lines.push("No lint findings.", "");
+    return `${lines.join("\n").trimEnd()}\n`;
+  }
+  const groups: Array<[string, LintFinding[]]> = [
+    ["Warnings", findings.filter((f) => f.severity === "warning")],
+    ["Info", findings.filter((f) => f.severity === "info")],
+  ];
+  for (const [heading, rows] of groups) {
+    lines.push(`## ${heading}`, "");
+    if (rows.length === 0) {
+      lines.push("None.", "");
+      continue;
+    }
+    lines.push(
+      "| Rule | Finding | Target | Location |",
+      "| --- | --- | --- | --- |",
+    );
+    for (const f of rows) {
+      lines.push(
+        `| ${escapeCell(f.code)} | ${escapeCell(f.message)} | ${escapeCell(targetLabel(f.target))} | ${escapeCell(findingLocation(f))} |`,
       );
     }
     lines.push("");

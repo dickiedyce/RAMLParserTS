@@ -20,6 +20,8 @@ schemes, and functional/non-functional requirements from description tables.
   OpenAPI `$ref`s
 - Extracts endpoints, parameters, responses, and security schemes
 - Extracts functional and non-functional requirements from description tables
+- Lints documentation omissions (missing descriptions, examples, acceptance
+  criteria) with per-rule configuration and file:line attribution
 - Runs 100% client-side: suitable for static web pages (ESM + IIFE builds)
 
 ## Supported formats
@@ -49,7 +51,13 @@ Or use the IIFE build from a plain `<script>` tag:
 ## Usage
 
 ```js
-import { discoverRoots, loadZip, parseFiles, parseSpec } from "raml-parser-ts";
+import {
+  discoverRoots,
+  lintSpec,
+  loadZip,
+  parseFiles,
+  parseSpec,
+} from "raml-parser-ts";
 
 // One-shot from dropped files (zip or folder):
 const spec = await parseFiles(event.dataTransfer.files);
@@ -59,11 +67,15 @@ console.log(spec.apiInfo.title, spec.endpoints.length);
 const vfs = loadZip(new Uint8Array(await file.arrayBuffer()));
 const roots = discoverRoots(vfs); // valid root candidates only
 const spec2 = parseSpec(vfs, roots[0]); // resolve + extract
+
+// Documentation-omission lint (DESIGN.md §18):
+const { findings } = lintSpec(spec2); // per-rule enable/severity via options
 ```
 
 `spec` is a plain JSON-serialisable `ParsedSpec` — `apiInfo`, `endpoints`,
 `requirements`, `diagnostics`. Non-fatal problems arrive as diagnostics; fatal
-ones throw `RamlParseError`. See [`DESIGN.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/DESIGN.md) §9–§10 for the model and
+ones throw `RamlParseError`. Every entity carries `source { file, line }`
+provenance pointing at its own key, and lint findings do the same. See [`DESIGN.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/DESIGN.md) §9–§10 for the model and
 [`docs/requirement-tables.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/docs/requirement-tables.md) for the FR/NFR
 extraction grammar.
 
@@ -92,6 +104,11 @@ recording + ffmpeg).
 A single-file Svelte viewer for browsing a dropped spec (folder or zip), with
 markdown exports and print styles. The built page runs from disk, offline, with
 no backend — nothing leaves your machine.
+
+Views: **Endpoints** (with inline lint badges and an "only endpoints with
+findings" filter), **Requirements**, **Lint** (documentation omissions grouped
+by severity, each with target and `file:line`), **Diagnostics**, **Raw**.
+Exports: `endpoints.md`, `requirements.md`, `lint.md`, plus print styles.
 
 ```sh
 npm run dev:ui     # develop with hot reload

@@ -12,6 +12,7 @@
 import { HTTP_METHODS } from "./expand.js";
 import type { Diagnostic } from "./diagnostics.js";
 import { parseRequirementTables } from "./requirements.js";
+import { keyPos, mergeRecords } from "./positions.js";
 import type {
   APIInfo,
   APIParameter,
@@ -25,6 +26,7 @@ import type {
   RequirementScope,
   ResponseBody,
   SecurityScheme,
+  Source,
   SourceMap,
 } from "./model.js";
 import type { ResolvedSpec } from "./resolve.js";
@@ -59,6 +61,7 @@ export function extractSpec(resolved: ResolvedSpec): ParsedSpec {
     endpoints,
     requirements: ctx.requirements,
     diagnostics: ctx.diagnostics,
+    format: resolved.format,
   };
 }
 
@@ -92,14 +95,19 @@ function pickMediaType(keys: string[], preferred?: string): string | undefined {
   return keys.find((k) => k.includes("/")) ?? keys[0];
 }
 
-function buildSecurityScheme(def: unknown): SecurityScheme {
+function buildSecurityScheme(def: unknown, source?: Source): SecurityScheme {
   if (!isRecord(def)) {
-    return { type: typeof def === "string" ? def : "", description: "" };
+    return {
+      type: typeof def === "string" ? def : "",
+      description: "",
+      source,
+    };
   }
   return {
     type: asType(def["type"]) ?? "",
     scheme: asType(def["scheme"]),
     description: asText(def["description"]),
+    source,
   };
 }
 
@@ -147,6 +155,7 @@ function buildParam(
   name: string,
   def: unknown,
   location: string,
+  source?: Source,
 ): APIParameter {
   const isPath = location === "path";
   const param: APIParameter = {
@@ -155,6 +164,7 @@ function buildParam(
     required: isPath, // query/header default false (PARITY.md #2); path default true
     type: "string",
     description: "",
+    source,
   };
   if (typeof def === "string") {
     param.type = def;
@@ -278,6 +288,7 @@ function extractRaml(
     mediaType: asType(tree["mediaType"]),
     documentation: extractDocumentation(tree["documentation"]),
     securitySchemes: ctx.securitySchemes,
+    source: keyPos(tree, "title") ?? keyPos(tree, "version"),
   };
   const endpoints: Endpoint[] = [];
   walkRamlResources(tree, "", {}, tree["securedBy"], ctx, endpoints);
@@ -291,7 +302,7 @@ function gatherRamlSecuritySchemes(
   const top = tree["securitySchemes"];
   if (isRecord(top)) {
     for (const [name, def] of Object.entries(top)) {
-      ctx.securitySchemes[name] = buildSecurityScheme(def);
+      ctx.securitySchemes[name] = buildSecurityScheme(def, keyPos(top, name));
     }
   }
   const uses = tree["uses"];
@@ -302,7 +313,10 @@ function gatherRamlSecuritySchemes(
       if (!isRecord(schemes)) continue;
       for (const [name, def] of Object.entries(schemes)) {
         if (!(name in ctx.securitySchemes)) {
-          ctx.securitySchemes[name] = buildSecurityScheme(def);
+          ctx.securitySchemes[name] = buildSecurityScheme(
+            def,
+            keyPos(schemes, name),
+          );
         }
       }
     }
@@ -336,7 +350,7 @@ function walkRamlResources(
   for (const [key, value] of Object.entries(node)) {
     if (!key.startsWith("/") || !isRecord(value)) continue;
     const path = basePath + key;
-    const uriHere = { ...uriAccum, ...uriParamsOf(value) };
+    const uriHere = mergeRecords(uriAccum, uriParamsOf(value));
     const securedHere = value["securedBy"] ?? securedBy;
     const resourceDesc = asType(value["description"]);
     const resourceReqs =
@@ -357,6 +371,7 @@ function walkRamlResources(
           resourceDesc,
           resourceReqs,
           ctx,
+          keyPos(value, mk),
         ),
       );
     }
@@ -378,6 +393,7 @@ function buildRamlEndpoint(
   resourceDesc: string | undefined,
   resourceReqs: Requirement[],
   ctx: Ctx,
+  source?: Source,
 ): Endpoint {
   const description = asText(op["description"]);
   const methodReqs =
@@ -385,20 +401,20 @@ function buildRamlEndpoint(
   ctx.requirements.push(...methodReqs);
 
   const parameters: APIParameter[] = [];
-  const pathParams = { ...uriHere, ...uriParamsOf(op) };
+  const pathParams = mergeRecords(uriHere, uriParamsOf(op));
   for (const [name, def] of Object.entries(pathParams)) {
-    parameters.push(buildParam(name, def, "path"));
+    parameters.push(buildParam(name, def, "path", keyPos(pathParams, name)));
   }
   const query = op["queryParameters"];
   if (isRecord(query)) {
     for (const [name, def] of Object.entries(query)) {
-      parameters.push(buildParam(name, def, "query"));
+      parameters.push(buildParam(name, def, "query", keyPos(query, name)));
     }
   }
   const headers = op["headers"];
   if (isRecord(headers)) {
     for (const [name, def] of Object.entries(headers)) {
-      parameters.push(buildParam(name, def, "header"));
+      parameters.push(buildParam(name, def, "header", keyPos(headers, name)));
     }
   }
 
@@ -411,6 +427,7 @@ function buildRamlEndpoint(
       responses.push({
         statusCode,
         description: asText(r["description"]),
+        source: keyPos(respDefs, statusCode),
         body:
           body === null || body === undefined
             ? undefined
@@ -420,6 +437,10 @@ function buildRamlEndpoint(
   }
 
   const hasBody = op["body"] !== undefined && op["body"] !== null;
+  const requestBody = hasBody
+    ? parseRamlBody(op["body"], ctx.rootMediaType)
+    : undefined;
+  if (requestBody !== undefined) requestBody.source = keyPos(op, "body");
   return {
     path,
     method: method.toUpperCase(),
@@ -427,12 +448,11 @@ function buildRamlEndpoint(
     description,
     resourceDescription: resourceDesc,
     parameters,
-    requestBody: hasBody
-      ? parseRamlBody(op["body"], ctx.rootMediaType)
-      : undefined,
+    requestBody,
     responses,
     requirements: [...resourceReqs, ...methodReqs],
     securitySchemeIds: securedByToIds(op["securedBy"] ?? securedBy, ctx),
+    source,
   };
 }
 
@@ -456,7 +476,7 @@ function extractOas(
     ? components["securitySchemes"]
     : {};
   for (const [name, def] of Object.entries(schemes)) {
-    ctx.securitySchemes[name] = buildSecurityScheme(def);
+    ctx.securitySchemes[name] = buildSecurityScheme(def, keyPos(schemes, name));
   }
 
   const url = serversUrl(tree);
@@ -469,6 +489,7 @@ function extractOas(
     mediaType: undefined,
     documentation: [],
     securitySchemes: ctx.securitySchemes,
+    source: keyPos(info, "title") ?? keyPos(info, "version"),
   };
 
   const endpoints: Endpoint[] = [];
@@ -498,6 +519,7 @@ function extractOas(
           resourceDesc,
           resourceReqs,
           ctx,
+          keyPos(pathItem, mk),
         ),
       );
     }
@@ -526,6 +548,7 @@ function buildOasEndpoint(
   resourceDesc: string | undefined,
   resourceReqs: Requirement[],
   ctx: Ctx,
+  source?: Source,
 ): Endpoint {
   const description = asText(op["description"]);
   const methodReqs =
@@ -533,9 +556,8 @@ function buildOasEndpoint(
   ctx.requirements.push(...methodReqs);
 
   const opParams = Array.isArray(op["parameters"]) ? op["parameters"] : [];
-  const parameters = mergeOasParams(pathParams, opParams).map((p) =>
-    buildOasParam(p),
-  );
+  const mergedParams = mergeOasParams(pathParams, opParams);
+  const parameters = mergedParams.map((p) => buildOasParam(p));
 
   const responses: APIResponse[] = [];
   const respDefs = op["responses"];
@@ -545,9 +567,17 @@ function buildOasEndpoint(
       responses.push({
         statusCode,
         description: asText(r["description"]),
+        source: keyPos(respDefs, statusCode),
         body: buildOasBody(r["content"]),
       });
     }
+  }
+
+  const requestBody = buildOasBody(
+    isRecord(op["requestBody"]) ? op["requestBody"]["content"] : undefined,
+  );
+  if (requestBody !== undefined) {
+    requestBody.source = keyPos(op, "requestBody");
   }
 
   return {
@@ -557,14 +587,13 @@ function buildOasEndpoint(
     description,
     resourceDescription: resourceDesc,
     parameters,
-    requestBody: buildOasBody(
-      isRecord(op["requestBody"]) ? op["requestBody"]["content"] : undefined,
-    ),
+    requestBody,
     responses,
     requirements: [...resourceReqs, ...methodReqs],
     securitySchemeIds: oasSecurityToIds(
       "security" in op ? op["security"] : rootSecurity,
     ),
+    source,
   };
 }
 
@@ -591,6 +620,8 @@ function buildOasParam(param: Record<string, unknown>): APIParameter {
       typeof param["required"] === "boolean" ? param["required"] : isPath,
     type: asType(schema["type"]) ?? "string",
     description: asText(param["description"]),
+    // OAS parameters are sequence items: the `name` key is the entity's key.
+    source: keyPos(param, "name"),
   };
   const example = "example" in schema ? schema["example"] : param["example"];
   if (example !== undefined) out.example = example;

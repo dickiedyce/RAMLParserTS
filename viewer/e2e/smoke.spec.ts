@@ -81,10 +81,19 @@ test("drop a zip, pick a root, browse endpoints and requirements", async ({
   await page.getByRole("button", { name: "Requirements", exact: true }).click();
   await expect(page.getByText("FR-E2E-01", { exact: true })).toBeVisible();
 
+  // Lint tab flags documentation omissions (no API description here).
+  await page.getByRole("button", { name: "Lint", exact: true }).click();
+  await expect(
+    page.getByText("api-info-missing-description", { exact: true }),
+  ).toBeVisible();
+
   // Diagnostics view renders; markdown export buttons are offered.
   await page.getByRole("button", { name: "Diagnostics" }).click();
   await expect(page.getByText("No diagnostics. Clean parse.")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Export endpoints.md" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Export lint.md" }),
   ).toBeVisible();
 });

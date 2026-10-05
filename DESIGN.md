@@ -185,3 +185,56 @@ filtered). If exactly one candidate: auto-select, no picker. API exposes
 Working method: **TDD (red-green-refactor)**, commit per completed cycle,
 milestones logged via DevJournal. Fixtures written first at each milestone,
 modeled on the LEAP sample's structure (content invented).
+
+## 18. Linting (documentation omissions)
+
+Agreed by interview (19 questions, 2026-10-05). Goal: highlight documentation
+omissions to the people writing the RAML files.
+
+- **Scope**: lint = **documentation omissions only**. Parser diagnostics remain
+  the source of truth for parse-time errors. Deliberate overlap allowed: each
+  view is self-contained, so `requirement-missing-acceptance` may appear in
+  both Diagnostics and Lint.
+- **Placement**: `src/lint.ts` in the **library**, exported from
+  `src/index.ts` — the separate API visualiser reuses it; the viewer stays thin.
+- **Input**: `lintSpec(parsed, options?)` runs over `ParsedSpec` (omission
+  semantics live in the model). Provenance is bought by extending
+  `source { file, line }` onto `Endpoint`, `APIParameter`, `APIResponse` and
+  `APIInfo` at extraction time, bridged from the `SourceMap` the way
+  `extractRequirements` already does.
+- **Attribution**: omission findings point at the **entity's own key line**
+  (the method key, the parameter key, the response status key) — where the
+  writer must add the missing key. Keys contributed by traits, resourceTypes or
+  `$ref` expansions carry the definition's file/line.
+- **Pipeline**: separate pure call — `parseSpec`/`extractSpec` contracts
+  unchanged (§9). The viewer calls `lintSpec` automatically after extraction
+  and holds the report in its own state.
+- **Finding shape**: `Diagnostic`-shaped **plus a structured `target`**
+  (`kind` + `endpointPath`/`method`/`name`/`statusCode`) so the viewer can place
+  badges without parsing messages; JSON-serializable plain data throughout.
+- **Severity**: two tiers — **warning** for missing descriptions (including
+  `endpoint-missing-responses`), **info** for missing examples, missing
+  documentation section and requirement-table completeness. Lint never emits
+  `error` (errors belong to the parser).
+- **Rules** (12, all enabled by default; each rule self-skips when
+  inapplicable — requirement-table rules skip OAS3 specs and RAML specs with no
+  requirement tables):
+  - warning: `endpoint-missing-description` (a resource-level description
+    covers its methods), `parameter-missing-description`,
+    `response-missing-description`, `api-info-missing-description`,
+    `security-scheme-missing-description`, `endpoint-missing-responses`
+  - info: `parameter-missing-example`, `response-missing-example`,
+    `request-body-missing-example`, `api-info-missing-documentation`,
+    `endpoint-missing-requirements`, `requirement-missing-acceptance`
+- **Config**: `LintOptions` — per-rule enable/disable plus optional severity
+  override (mirrors the `RequirementTableConfig` precedent in §7).
+- **Viewer**: fifth **Lint** tab (severity / rule / message / target /
+  `file:line`), inline badges on `EndpointCard` and parameter/response rows, a
+  single "Only endpoints with findings" toggle on EndpointsView, and a
+  standalone **`lint.md`** export (findings grouped by severity) alongside the
+  existing exports.
+- **Parity**: the TS→Swift projection ignores the new `source` fields
+  (additive A10 in PARITY.md) — no golden regeneration, no allowlist entries.
+- **Tests**: per-rule unit tests (fires / does not fire / self-skips) with
+  inline `createVfs` fixtures; viewer component tests on the `makeSpec()`
+  fixture pattern; the Playwright smoke asserts the Lint tab renders.

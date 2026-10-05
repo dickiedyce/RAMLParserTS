@@ -103,7 +103,7 @@ describe("golden parity (TS vs RAMLParserKit)", () => {
     expect(req?.scope).toBe("resource");
     expect(req?.source?.file).toBe("overview_files/ov_items.md");
     expect(post?.securitySchemeIds).toEqual(["clientIdEnforcement"]);
-    // ...and stripped by the projection (A1-A9).
+    // ...and stripped by the projection (A1-A11).
     const projected = JSON.stringify(projectToSwift(spec));
     for (const key of [
       "requestBody",
@@ -114,6 +114,7 @@ describe("golden parity (TS vs RAMLParserKit)", () => {
       "protocols",
       "mediaType",
       "documentation",
+      "format",
     ]) {
       expect(projected).not.toContain(`"${key}"`);
     }

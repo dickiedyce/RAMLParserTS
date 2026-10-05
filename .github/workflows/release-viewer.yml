@@ -1,0 +1,55 @@
+# Builds the single-file viewer and distributes it without npm:
+# - uploads raml-parser-viewer.html to the GitHub Release for the pushed tag
+# - deploys viewer/dist to GitHub Pages (https://dickiedyce.github.io/RAMLParserTS/)
+# Triggered by version tags (v*) or manually via workflow_dispatch (redeploys
+# Pages from the current default branch without cutting a release).
+name: Release viewer
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release-viewer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Full check (typecheck, lint, tests, build)
+        run: npm run check
+      - name: Build single-file viewer
+        run: npm run build:ui
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp viewer/dist/index.html raml-parser-viewer.html
+          gh release upload "${{ github.ref_name }}" raml-parser-viewer.html --clobber
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: viewer/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

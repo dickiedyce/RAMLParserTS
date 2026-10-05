@@ -164,9 +164,19 @@ filtered). If exactly one candidate: auto-select, no picker. API exposes
 
 ## 16. CI, hosting, release
 
-- **No CI.** Local `npm run check` (typecheck + lint + test + build) is the
-  single pre-push discipline. No workflows directory, no badges.
-- Viewer: **no hosting** — deliverable is `dist` single-file HTML running from disk.
+- **CI: release-only.** Local `npm run check` (typecheck + lint + test + build)
+  remains the single pre-push discipline. One workflow,
+  `.github/workflows/release-viewer.yml`, runs on `v*` tags (and
+  `workflow_dispatch`): full check → build single-file viewer → upload
+  `raml-parser-viewer.html` to the GitHub Release → deploy to GitHub Pages.
+  No badges, no per-commit CI.
+- Viewer hosting: GitHub Pages at
+  `https://dickiedyce.github.io/RAMLParserTS/` plus a
+  `raml-parser-viewer.html` asset on every GitHub Release — both serve the
+  identical single-file HTML that still runs from disk, offline. The
+  no-backend/no-npm guarantee is unchanged; hosting is an additional
+  distribution channel (decision revisited 2026-10-05, prior "no hosting"
+  stance replaced).
 - npm: **manual `npm publish`** from a clean checkout when ready; `package.json`
   kept publish-ready (`exports`, `files`, `prepublishOnly`).
 

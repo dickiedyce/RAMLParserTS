@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- No-install viewer distribution: `raml-parser-viewer.html` (the self-contained
+  viewer) attached to every GitHub Release, hosted on GitHub Pages at
+  https://dickiedyce.github.io/RAMLParserTS/, and a `release-viewer.yml`
+  workflow that runs `npm run check`, uploads the asset to the tagged release,
+  and deploys Pages on each `v*` tag.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added

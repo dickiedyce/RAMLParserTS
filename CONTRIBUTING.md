@@ -7,8 +7,9 @@
 - **No Node in the library**: `src/` and `viewer/` must run in browsers with no
   Node runtime. The lint config enforces this; tooling under `scripts/` and
   tests are exempt.
-- **No CI**: run `npm run check` (typecheck + lint + tests + build) before
-  pushing. It must pass.
+- **Pre-push discipline**: run `npm run check` (typecheck + lint + tests +
+  build) before pushing. It must pass. CI (`release-viewer.yml`) re-runs it
+  when a release tag is pushed.
 
 ## Getting started
 

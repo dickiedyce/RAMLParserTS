@@ -105,6 +105,14 @@ A single-file Svelte viewer for browsing a dropped spec (folder or zip), with
 markdown exports and print styles. The built page runs from disk, offline, with
 no backend — nothing leaves your machine.
 
+**No npm? No problem** — use it as a standalone tool:
+
+- **Hosted**: https://dickiedyce.github.io/RAMLParserTS/ (same file, served by
+  GitHub Pages)
+- **Download**: [`raml-parser-viewer.html`](https://github.com/dickiedyce/RAMLParserTS/releases/latest/download/raml-parser-viewer.html)
+  from the latest GitHub Release — save it and open it in any browser,
+  offline. Every `v*` release ships an up-to-date copy.
+
 Views: **Endpoints** (with inline lint badges and an "only endpoints with
 findings" filter), **Requirements**, **Lint** (documentation omissions grouped
 by severity, each with target and `file:line`), **Diagnostics**, **Raw**.
@@ -123,8 +131,10 @@ npm install
 npm run check   # typecheck + lint + tests + build
 ```
 
-See [`CONTRIBUTING.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/CONTRIBUTING.md). No CI is configured — run
-`npm run check` before pushing. The Playwright smoke (`npm run check:ui`) needs
+See [`CONTRIBUTING.md`](https://github.com/dickiedyce/RAMLParserTS/blob/main/CONTRIBUTING.md). Run
+`npm run check` before pushing; CI (`release-viewer.yml`) re-runs it on each
+release tag and publishes the viewer to the GitHub Release and Pages. The
+Playwright smoke (`npm run check:ui`) needs
 `npx playwright install chromium` once first.
 
 ## Credits

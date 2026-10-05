@@ -1,6 +1,6 @@
 {
   "name": "raml-parser-ts",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Parse RAML 1.0 and OpenAPI 3.x specifications into structured data — in the browser. TypeScript port of RAMLParserKit.",
   "keywords": [
     "raml",

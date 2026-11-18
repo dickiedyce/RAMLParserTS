@@ -39,6 +39,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp viewer/dist/index.html raml-parser-viewer.html
+          # Create the GitHub Release for the tag if it doesn't already exist
+          # (pushing a tag does not create a release), then attach the viewer.
+          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 \
+            || gh release create "${{ github.ref_name }}" \
+                 --title "raml-parser-ts ${{ github.ref_name }}" \
+                 --notes "See CHANGELOG.md for details."
           gh release upload "${{ github.ref_name }}" raml-parser-viewer.html --clobber
       - uses: actions/upload-pages-artifact@v3
         with:

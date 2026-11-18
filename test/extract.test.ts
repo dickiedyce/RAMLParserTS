@@ -369,3 +369,303 @@ describe("OpenAPI extraction", () => {
     expect(post?.securitySchemeIds).toEqual([]);
   });
 });
+
+describe("type: !include of a RAML DataType document", () => {
+  const DATA_TYPE = `#%RAML 1.0 DataType
+type: array
+items:
+  type: object
+  properties:
+    groupName:
+      type: string
+`;
+
+  function apiWithType(typeLine: string): [string, string][] {
+    return [
+      [
+        "api.raml",
+        HEADER +
+          "title: Minimal\n" +
+          "version: v1\n" +
+          "/groups:\n" +
+          "  get:\n" +
+          "    responses:\n" +
+          "      200:\n" +
+          "        body:\n" +
+          "          application/json:\n" +
+          `            ${typeLine}\n` +
+          "            example: []\n",
+      ],
+      ["groupList.raml", DATA_TYPE],
+    ];
+  }
+
+  it("carries the type (name + structured decl) when type: !include a DataType doc", () => {
+    const spec = parseSpec(
+      createVfs(apiWithType("type: !include groupList.raml")),
+      "api.raml",
+    );
+    const body = spec.endpoints[0]?.responses[0]?.body;
+    // A name is carried (never dropped)…
+    expect(body?.type).toBeTruthy();
+    // …and the full structured declaration rides along in typeDecl.
+    expect(body?.typeDecl).toBeTruthy();
+    expect(body?.typeDecl).toMatchObject({
+      type: "array",
+      items: {
+        type: "object",
+        properties: { groupName: { type: "string" } },
+      },
+    });
+    // examples are preserved; no silent loss, no spurious diagnostic.
+    expect(body?.examples).toEqual({ example: [] });
+    expect(spec.diagnostics.filter((d) => /type/i.test(d.message))).toEqual([]);
+  });
+
+  it("derives a name from displayName when the DataType declares one", () => {
+    const files: [string, string][] = [
+      [
+        "api.raml",
+        HEADER +
+          "title: T\n" +
+          "/g:\n" +
+          "  get:\n" +
+          "    responses:\n" +
+          "      200:\n" +
+          "        body:\n" +
+          "          application/json:\n" +
+          "            type: !include gl.raml\n",
+      ],
+      [
+        "gl.raml",
+        `#%RAML 1.0 DataType\ndisplayName: Record List Schema\ntype: array\n`,
+      ],
+    ];
+    const spec = parseSpec(createVfs(files), "api.raml");
+    const body = spec.endpoints[0]?.responses[0]?.body;
+    expect(body?.type).toBe("Record List Schema");
+    expect(body?.typeDecl).toBeTruthy();
+  });
+
+  it("emits a diagnostic when a declared type cannot be carried", () => {
+    const files: [string, string][] = [
+      [
+        "api.raml",
+        HEADER +
+          "title: T\n" +
+          "/g:\n" +
+          "  get:\n" +
+          "    responses:\n" +
+          "      200:\n" +
+          "        body:\n" +
+          "          application/json:\n" +
+          "            type: []\n",
+      ],
+    ];
+    const spec = parseSpec(createVfs(files), "api.raml");
+    const body = spec.endpoints[0]?.responses[0]?.body;
+    // A sequence type has no name and is not a record decl: nothing to carry.
+    expect(body?.type).toBeUndefined();
+    expect(body?.typeDecl).toBeUndefined();
+    // The loss is reported, never silent.
+    expect(
+      spec.diagnostics.some((d) => /type/i.test(d.message)),
+    ).toBe(true);
+  });
+
+  it("keeps inline, library and plain-text type declarations working", () => {
+    // inline scalar
+    const inline = parseSpec(
+      createVfs([
+        [
+          "api.raml",
+          HEADER +
+            "title: T\n" +
+            "/g:\n" +
+            "  get:\n" +
+            "    responses:\n" +
+            "      200:\n" +
+            "        body:\n" +
+            "          application/json:\n" +
+            "            type: array\n",
+        ],
+      ]),
+      "api.raml",
+    );
+    expect(inline.endpoints[0]?.responses[0]?.body?.type).toBe("array");
+    expect(inline.endpoints[0]?.responses[0]?.body?.typeDecl).toBeUndefined();
+
+    // plain-text include
+    const text = parseSpec(
+      createVfs([
+        [
+          "api.raml",
+          HEADER +
+            "title: T\n" +
+            "/g:\n" +
+            "  get:\n" +
+            "    responses:\n" +
+            "      200:\n" +
+            "        body:\n" +
+            "          application/json:\n" +
+            "            type: !include type.txt\n",
+        ],
+        ["type.txt", "array"],
+      ]),
+      "api.raml",
+    );
+    expect(text.endpoints[0]?.responses[0]?.body?.type).toBe("array");
+    expect(text.endpoints[0]?.responses[0]?.body?.typeDecl).toBeUndefined();
+
+    // named type from a uses: library
+    const lib = parseSpec(
+      createVfs([
+        [
+          "api.raml",
+          HEADER +
+            "title: T\n" +
+            "uses:\n" +
+            "  L: lib.raml\n" +
+            "/g:\n" +
+            "  get:\n" +
+            "    responses:\n" +
+            "      200:\n" +
+            "        body:\n" +
+            "          application/json:\n" +
+            "            type: L.groupList\n",
+        ],
+        [
+          "lib.raml",
+          `#%RAML 1.0 Library\ngroupList:\n  type: array\n`,
+        ],
+      ]),
+      "api.raml",
+    );
+    expect(lib.endpoints[0]?.responses[0]?.body?.type).toBe("L.groupList");
+    expect(lib.endpoints[0]?.responses[0]?.body?.typeDecl).toBeUndefined();
+  });
+});
+
+describe("type: !include for parameters and security schemes", () => {
+  const PARAM_TYPE = `#%RAML 1.0 DataType
+displayName: Fancy Filter
+type: object
+properties:
+  a:
+    type: string
+`;
+  const SCHEME_TYPE = `#%RAML 1.0 DataType\ndisplayName: OAuth Two\ntype: string\n`;
+
+  it("carries a structured param type in typeDecl with a derived name", () => {
+    const files: [string, string][] = [
+      [
+        "api.raml",
+        HEADER +
+          "title: T\n" +
+          "/g:\n" +
+          "  get:\n" +
+          "    queryParameters:\n" +
+          "      q:\n" +
+          "        type: !include paramType.raml\n",
+      ],
+      ["paramType.raml", PARAM_TYPE],
+    ];
+    const spec = parseSpec(createVfs(files), "api.raml");
+    const param = spec.endpoints[0]?.parameters[0];
+    expect(param?.type).toBe("Fancy Filter");
+    expect(param?.typeDecl).toMatchObject({
+      displayName: "Fancy Filter",
+      type: "object",
+      properties: { a: { type: "string" } },
+    });
+    expect(
+      spec.diagnostics.filter((d) => /type/i.test(d.message)),
+    ).toEqual([]);
+  });
+
+  it("carries a structured security-scheme type in typeDecl with a derived name", () => {
+    const files: [string, string][] = [
+      [
+        "api.raml",
+        HEADER +
+          "title: T\n" +
+          "securitySchemes:\n" +
+          "  s:\n" +
+          "    type: !include schemeType.raml\n" +
+          "/g:\n" +
+          "  get:\n",
+      ],
+      ["schemeType.raml", SCHEME_TYPE],
+    ];
+    const spec = parseSpec(createVfs(files), "api.raml");
+    const scheme = spec.apiInfo.securitySchemes["s"];
+    expect(scheme?.type).toBe("OAuth Two");
+    expect(scheme?.typeDecl).toMatchObject({
+      displayName: "OAuth Two",
+      type: "string",
+    });
+    expect(
+      spec.diagnostics.filter((d) => /type/i.test(d.message)),
+    ).toEqual([]);
+  });
+
+  it("keeps scalar param and security-scheme types unchanged (no typeDecl)", () => {
+    const files: [string, string][] = [
+      [
+        "api.raml",
+        HEADER +
+          "title: T\n" +
+          "securitySchemes:\n" +
+          "  s:\n" +
+          "    type: OAuth 2.0\n" +
+          "/g:\n" +
+          "  get:\n" +
+          "    queryParameters:\n" +
+          "      q:\n" +
+          "        type: integer\n",
+      ],
+    ];
+    const spec = parseSpec(createVfs(files), "api.raml");
+    const param = spec.endpoints[0]?.parameters[0];
+    expect(param?.type).toBe("integer");
+    expect(param?.typeDecl).toBeUndefined();
+    const scheme = spec.apiInfo.securitySchemes["s"];
+    expect(scheme?.type).toBe("OAuth 2.0");
+    expect(scheme?.typeDecl).toBeUndefined();
+  });
+
+  it("carries a structured OAS param schema in typeDecl", () => {
+    const files: [string, string][] = [
+      [
+        "openapi.json",
+        JSON.stringify({
+          openapi: "3.0.0",
+          info: { title: "T", version: "1" },
+          paths: {
+            "/g": {
+              get: {
+                parameters: [
+                  {
+                    name: "q",
+                    in: "query",
+                    schema: {
+                      type: "object",
+                      properties: { a: { type: "string" } },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }),
+      ],
+    ];
+    const spec = parseSpec(createVfs(files), "openapi.json");
+    const param = spec.endpoints[0]?.parameters[0];
+    expect(param?.type).toBe("object");
+    expect(param?.typeDecl).toMatchObject({
+      type: "object",
+      properties: { a: { type: "string" } },
+    });
+  });
+});

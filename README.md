@@ -16,6 +16,9 @@ schemes, and functional/non-functional requirements from description tables.
 - Parses RAML 1.0 and OpenAPI 3.0/3.1 specifications
 - Resolves `!include` directives (RAML, YAML, JSON, plain text) from a
   folder/zip dropped into the page
+- Carries `type:` declarations as written — including structured types from an
+  `!include` of a `#%RAML 1.0 DataType` document (name in `type`, full shape in
+  `typeDecl`), never dropped silently
 - Expands RAML traits, resource types, and `uses:` libraries; resolves
   OpenAPI `$ref`s
 - Extracts endpoints, parameters, responses, and security schemes

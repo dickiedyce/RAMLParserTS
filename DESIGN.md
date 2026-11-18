@@ -56,7 +56,11 @@ values can be object nodes, e.g. included JSON examples); `resourceTypes:`;
 `uses:` namespaces for security/type references.
 
 **Not** in scope: RAML type-system evaluation (inheritance, unions, facets
-elaboration). `type:` declarations are carried as written.
+elaboration). `type:` declarations are carried as written. A `type:` that
+resolves to an object (e.g. an `!include` of a `#%RAML 1.0 DataType` document,
+or an inline type expression) is not a scalar name — its derived name is kept
+in `type` and the full resolved declaration is carried in `typeDecl`, so a
+structured type is never silently dropped.
 
 ## 7. Requirement-table extraction (configurable)
 
@@ -105,13 +109,20 @@ misled (`schemaType` → `type`). Every field justified by sample-export data or
 concrete consumer — no speculative generality. Known additions over Swift:
 
 - `APIInfo.baseUri / protocols / mediaType / documentation[]`
-- `Endpoint.requestBody { type, examples }`; resource-level vs method-level
-  descriptions distinguished; requirements carry `scope: "resource" | "method"`
+- `Endpoint.requestBody { type, typeDecl, examples }`; resource-level vs
+  method-level descriptions distinguished; requirements carry
+  `scope: "resource" | "method"`
 - `APIResponse.examples[]` (examples, not just content type)
 - `APIParameter`: numeric facets (`minimum`/`maximum` as numbers), string
   constraints where observed; `example` preserves JSON shape (not stringified)
 - `SecurityScheme` objects referenced by id (`Endpoint.securitySchemeIds`),
   no duplicated bare-string scheme lists
+- `typeDecl` (additive) on `RequestBody`, `ResponseBody`, `APIParameter` and
+  `SecurityScheme`: when a `type:`/`schema` resolves to an object (e.g. an
+  `!include` of a `#%RAML 1.0 DataType` document), the full declaration is
+  carried as written here while `type` keeps its derived name. A declared type
+  that can be neither named nor carried raises a `type-not-carried` diagnostic
+  rather than being dropped silently.
 - `source { file, line }` provenance on requirements and diagnostics
 - Swift `id: UUID` fields are **dropped** (Identifiable artifact).
 

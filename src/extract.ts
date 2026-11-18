@@ -28,6 +28,7 @@ import type {
   SecurityScheme,
   Source,
   SourceMap,
+  TypeDecl,
 } from "./model.js";
 import type { ResolvedSpec } from "./resolve.js";
 import { isRecord } from "./util.js";
@@ -83,6 +84,48 @@ function asType(value: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * Derives a human/consumer-facing type *name* from a `type:` value.
+ *
+ * Scalars are carried as written. A structured declaration (a resolved RAML
+ * type expression or DataType document) has no single string form, so we name
+ * it: its `displayName` if present, else its `type`/base-name scalar, else the
+ * last path segment of a filename-like fallback key. Returns `undefined` when
+ * no name can be derived.
+ */
+function typeNameOf(value: unknown, fallbackKey?: string): string | undefined {
+  const scalar = asType(value);
+  if (scalar !== undefined) return scalar;
+  if (!isRecord(value)) return undefined;
+  const display = asType(value["displayName"]);
+  if (display !== undefined) return display;
+  const base = asType(value["type"]);
+  if (base !== undefined) return base;
+  if (fallbackKey !== undefined && fallbackKey !== "") {
+    const seg = fallbackKey.split(/[\\/]/).pop() ?? fallbackKey;
+    return seg.replace(/\.[^.]*$/, "");
+  }
+  return undefined;
+}
+
+/**
+ * Splits a `type:` value into its string name (for `type`) and its full
+ * structured form (for `typeDecl`), plus whether a value was present at all.
+ * A structured declaration is carried in `typeDecl` so it is never dropped.
+ */
+function typeDeclOf(
+  value: unknown,
+  fallbackKey?: string,
+): { name?: string; decl?: TypeDecl; present: boolean } {
+  if (value === undefined || value === null) return { present: false };
+  const decl = isRecord(value) ? value : undefined;
+  return {
+    name: typeNameOf(value, fallbackKey),
+    decl,
+    present: true,
+  };
+}
+
 function isHttpMethod(key: string): boolean {
   return (HTTP_METHODS as readonly string[]).includes(key.toLowerCase());
 }
@@ -95,7 +138,12 @@ function pickMediaType(keys: string[], preferred?: string): string | undefined {
   return keys.find((k) => k.includes("/")) ?? keys[0];
 }
 
-function buildSecurityScheme(def: unknown, source?: Source): SecurityScheme {
+function buildSecurityScheme(
+  def: unknown,
+  ctx: Ctx,
+  source?: Source,
+  key?: string,
+): SecurityScheme {
   if (!isRecord(def)) {
     return {
       type: typeof def === "string" ? def : "",
@@ -103,8 +151,10 @@ function buildSecurityScheme(def: unknown, source?: Source): SecurityScheme {
       source,
     };
   }
+  const { type, typeDecl } = bodyType(def["type"], ctx.diagnostics, key);
   return {
-    type: asType(def["type"]) ?? "",
+    type: type ?? "",
+    typeDecl,
     scheme: asType(def["scheme"]),
     description: asText(def["description"]),
     source,
@@ -155,6 +205,7 @@ function buildParam(
   name: string,
   def: unknown,
   location: string,
+  ctx: Ctx,
   source?: Source,
 ): APIParameter {
   const isPath = location === "path";
@@ -169,8 +220,9 @@ function buildParam(
   if (typeof def === "string") {
     param.type = def;
   } else if (isRecord(def)) {
-    const type = asType(def["type"]);
+    const { type, typeDecl } = bodyType(def["type"], ctx.diagnostics, name);
     if (type !== undefined) param.type = type;
+    if (typeDecl !== undefined) param.typeDecl = typeDecl;
     param.description = asText(def["description"]);
     if ("required" in def && typeof def["required"] === "boolean") {
       param.required = def["required"];
@@ -241,8 +293,18 @@ function collectRamlExamples(node: Record<string, unknown>): ExampleMap {
  * Parses a RAML `body` node: either an implied-media-type form
  * (`{ type, example(s) }`) or a media-type-keyed form
  * (`{ "application/json": { type, example(s) } }`).
+ *
+ * A `type:` that resolves to an object (e.g. an `!include` of a `#%RAML 1.0
+ * DataType` document) is carried in `typeDecl` with its derived name in
+ * `type`. If a declared `type` can be neither named nor carried, a
+ * `type-not-carried` diagnostic is emitted so the loss is never silent.
  */
-function parseRamlBody(body: unknown, rootMediaType?: string): RequestBody {
+function parseRamlBody(
+  body: unknown,
+  rootMediaType: string | undefined,
+  diagnostics: Diagnostic[],
+  fallbackKey?: string,
+): RequestBody {
   if (typeof body === "string") {
     return { contentType: rootMediaType, type: body, examples: {} };
   }
@@ -251,7 +313,7 @@ function parseRamlBody(body: unknown, rootMediaType?: string): RequestBody {
   if (hasFacet) {
     return {
       contentType: rootMediaType,
-      type: asType(node["type"]),
+      ...bodyType(node["type"], diagnostics, fallbackKey),
       examples: collectRamlExamples(node),
     };
   }
@@ -261,15 +323,37 @@ function parseRamlBody(body: unknown, rootMediaType?: string): RequestBody {
   if (isRecord(inner)) {
     return {
       contentType: key,
-      type: asType(inner["type"]),
+      ...bodyType(inner["type"], diagnostics, fallbackKey),
       examples: collectRamlExamples(inner),
     };
   }
   return {
     contentType: key,
-    type: asType(inner),
+    ...bodyType(inner, diagnostics, fallbackKey),
     examples: {},
   };
+}
+
+/**
+ * Builds the `type`/`typeDecl` pair for a body `type:` value, reporting a
+ * `type-not-carried` diagnostic when a declared type cannot be represented.
+ */
+function bodyType(
+  value: unknown,
+  diagnostics: Diagnostic[],
+  fallbackKey?: string,
+): { type?: string; typeDecl?: TypeDecl } {
+  const { name, decl, present } = typeDeclOf(value, fallbackKey);
+  if (!present) return {};
+  if (name === undefined && decl === undefined) {
+    diagnostics.push({
+      code: "type-not-carried",
+      severity: "warning",
+      message: `Type declaration could not be carried for body ${fallbackKey ?? ""}`.trim(),
+    });
+    return {};
+  }
+  return { type: name, typeDecl: decl };
 }
 
 // MARK: - RAML extraction
@@ -302,7 +386,12 @@ function gatherRamlSecuritySchemes(
   const top = tree["securitySchemes"];
   if (isRecord(top)) {
     for (const [name, def] of Object.entries(top)) {
-      ctx.securitySchemes[name] = buildSecurityScheme(def, keyPos(top, name));
+      ctx.securitySchemes[name] = buildSecurityScheme(
+        def,
+        ctx,
+        keyPos(top, name),
+        name,
+      );
     }
   }
   const uses = tree["uses"];
@@ -315,7 +404,9 @@ function gatherRamlSecuritySchemes(
         if (!(name in ctx.securitySchemes)) {
           ctx.securitySchemes[name] = buildSecurityScheme(
             def,
+            ctx,
             keyPos(schemes, name),
+            name,
           );
         }
       }
@@ -403,18 +494,18 @@ function buildRamlEndpoint(
   const parameters: APIParameter[] = [];
   const pathParams = mergeRecords(uriHere, uriParamsOf(op));
   for (const [name, def] of Object.entries(pathParams)) {
-    parameters.push(buildParam(name, def, "path", keyPos(pathParams, name)));
+    parameters.push(buildParam(name, def, "path", ctx, keyPos(pathParams, name)));
   }
   const query = op["queryParameters"];
   if (isRecord(query)) {
     for (const [name, def] of Object.entries(query)) {
-      parameters.push(buildParam(name, def, "query", keyPos(query, name)));
+      parameters.push(buildParam(name, def, "query", ctx, keyPos(query, name)));
     }
   }
   const headers = op["headers"];
   if (isRecord(headers)) {
     for (const [name, def] of Object.entries(headers)) {
-      parameters.push(buildParam(name, def, "header", keyPos(headers, name)));
+      parameters.push(buildParam(name, def, "header", ctx, keyPos(headers, name)));
     }
   }
 
@@ -431,14 +522,16 @@ function buildRamlEndpoint(
         body:
           body === null || body === undefined
             ? undefined
-            : toResponseBody(parseRamlBody(body, ctx.rootMediaType)),
+            : toResponseBody(
+                parseRamlBody(body, ctx.rootMediaType, ctx.diagnostics, statusCode),
+              ),
       });
     }
   }
 
   const hasBody = op["body"] !== undefined && op["body"] !== null;
   const requestBody = hasBody
-    ? parseRamlBody(op["body"], ctx.rootMediaType)
+    ? parseRamlBody(op["body"], ctx.rootMediaType, ctx.diagnostics, "request body")
     : undefined;
   if (requestBody !== undefined) requestBody.source = keyPos(op, "body");
   return {
@@ -460,6 +553,7 @@ function toResponseBody(body: RequestBody): ResponseBody {
   return {
     contentType: body.contentType,
     type: body.type,
+    typeDecl: body.typeDecl,
     examples: body.examples,
   };
 }
@@ -476,7 +570,12 @@ function extractOas(
     ? components["securitySchemes"]
     : {};
   for (const [name, def] of Object.entries(schemes)) {
-    ctx.securitySchemes[name] = buildSecurityScheme(def, keyPos(schemes, name));
+    ctx.securitySchemes[name] = buildSecurityScheme(
+      def,
+      ctx,
+      keyPos(schemes, name),
+      name,
+    );
   }
 
   const url = serversUrl(tree);
@@ -557,7 +656,7 @@ function buildOasEndpoint(
 
   const opParams = Array.isArray(op["parameters"]) ? op["parameters"] : [];
   const mergedParams = mergeOasParams(pathParams, opParams);
-  const parameters = mergedParams.map((p) => buildOasParam(p));
+  const parameters = mergedParams.map((p) => buildOasParam(p, ctx));
 
   const responses: APIResponse[] = [];
   const respDefs = op["responses"];
@@ -609,20 +708,46 @@ function mergeOasParams(
   return [...map.values()];
 }
 
-function buildOasParam(param: Record<string, unknown>): APIParameter {
+const OAS_STRUCTURAL_KEYS = [
+  "properties",
+  "items",
+  "allOf",
+  "oneOf",
+  "anyOf",
+  "additionalProperties",
+];
+
+function buildOasParam(param: Record<string, unknown>, ctx: Ctx): APIParameter {
   const schema = isRecord(param["schema"]) ? param["schema"] : {};
   const location = asText(param["in"]) || "query";
   const isPath = location === "path";
+  const name = asText(param["name"]);
+  // OAS param type comes from `schema.type` (a scalar name). When the schema
+  // carries a structural shape (`properties`, `items`, composition) or an
+  // object `type`, the full schema is carried in `typeDecl` so its shape is
+  // never dropped. A plain scalar schema keeps just its name.
+  const scalarType = asType(schema["type"]);
+  const hasStructure =
+    isRecord(schema["type"]) ||
+    OAS_STRUCTURAL_KEYS.some((k) => schema[k] !== undefined);
   const out: APIParameter = {
-    name: asText(param["name"]),
+    name,
     location,
     required:
       typeof param["required"] === "boolean" ? param["required"] : isPath,
-    type: asType(schema["type"]) ?? "string",
+    type: scalarType ?? typeNameOf(schema["type"], name) ?? "string",
     description: asText(param["description"]),
     // OAS parameters are sequence items: the `name` key is the entity's key.
     source: keyPos(param, "name"),
   };
+  if (hasStructure) out.typeDecl = schema;
+  if (scalarType === undefined && typeNameOf(schema["type"], name) === undefined) {
+    ctx.diagnostics.push({
+      code: "type-not-carried",
+      severity: "warning",
+      message: `Type declaration could not be named for parameter ${name}`,
+    });
+  }
   const example = "example" in schema ? schema["example"] : param["example"];
   if (example !== undefined) out.example = example;
   if (typeof schema["minimum"] === "number") out.minimum = schema["minimum"];

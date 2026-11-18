@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `typeDecl` (additive) on `RequestBody`, `ResponseBody`, `APIParameter` and
+  `SecurityScheme`. When a `type:` (or an OAS `schema`) resolves to an object —
+  for example an `!include` of a `#%RAML 1.0 DataType` document or an inline
+  type expression — the full resolved declaration is carried as written in
+  `typeDecl`, while `type` keeps its derived name (`displayName`, then
+  `type`/base, then the include basename). Scalar types are unchanged and have
+  no `typeDecl`. Non-breaking: `type` remains `string`.
+- `type-not-carried` diagnostic code, emitted when a declared type can be
+  neither named nor carried, so a type is never dropped silently.
+
+### Fixed
+
+- `type:` is no longer lost when it is an `!include` of a RAML `DataType`
+  document. Previously the resolved structured type was coerced to a string and
+  dropped, leaving `ResponseBody.type`/`RequestBody.type` undefined with no
+  diagnostic. Structured types are now carried in `typeDecl` (with a derived
+  name in `type`) for bodies, parameters and security schemes.
 - No-install viewer distribution: `raml-parser-viewer.html` (the self-contained
   viewer) attached to every GitHub Release, hosted on GitHub Pages at
   https://dickiedyce.github.io/RAMLParserTS/, and a `release-viewer.yml`

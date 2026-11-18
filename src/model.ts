@@ -35,6 +35,12 @@ export type SourceMap = Map<string, string>;
 export interface SecurityScheme {
   /** e.g. `OAuth 2.0`, `Basic Auth`, `Pass Through`, `x-custom`, `anonymous`. */
   type: string;
+  /**
+   * Full structured type declaration, present when the scheme's `type:`
+   * resolved to an object (e.g. an `!include` of a RAML document). Carried as
+   * written (additive).
+   */
+  typeDecl?: TypeDecl;
   /** HTTP auth scheme (`bearer`, `basic`), when applicable (OAS). */
   scheme?: string;
   description: string;
@@ -51,8 +57,17 @@ export interface APIParameter {
   /** `query` | `path` | `header` (RAML) | `cookie` (OAS). */
   location: string;
   required: boolean;
-  /** Type declaration, carried as written (A7, was Swift `schemaType`). */
+  /**
+   * Type name, carried as written (A7, was Swift `schemaType`). For a
+   * structured declaration this is the derived name, not the full shape.
+   */
   type: string;
+  /**
+   * Full structured type declaration, present when the parameter's `type:`
+   * (RAML) or `schema` (OAS) resolved to an object. Carried as written
+   * (additive).
+   */
+  typeDecl?: TypeDecl;
   description: string;
   /** JSON-shaped example value (A4), not stringified. */
   example?: unknown;
@@ -73,12 +88,28 @@ export interface APIParameter {
 /** Named examples keyed by example name (single examples use the key `example`). */
 export type ExampleMap = Record<string, unknown>;
 
+/**
+ * A structured type declaration: a resolved RAML type expression or DataType
+ * document (`{ type, items, properties, displayName, … }`), carried as written
+ * when `type:` was an `!include` of a RAML document or an inline type mapping.
+ */
+export type TypeDecl = Record<string, unknown>;
+
 /** Request body (additive, A2). Mirrors {@link ResponseBody}. */
 export interface RequestBody {
   /** Media type when declared explicitly (`application/json`). */
   contentType?: string;
-  /** Type declaration, carried as written. */
+  /**
+   * Type name, carried as written. For a structured declaration this is the
+   * derived name (its `type`/base or `displayName`), not the full shape.
+   */
   type?: string;
+  /**
+   * Full structured type declaration, present when `type:` resolved to an
+   * object (e.g. an `!include` of a `#%RAML 1.0 DataType` document). Carried
+   * as written (additive).
+   */
+  typeDecl?: TypeDecl;
   examples: ExampleMap;
   /** Where the body key was written (additive, A10). */
   source?: Source;
@@ -88,8 +119,17 @@ export interface RequestBody {
 export interface ResponseBody {
   /** Media type (the body's media-type key, or the root `mediaType`). */
   contentType?: string;
-  /** Type declaration, carried as written. */
+  /**
+   * Type name, carried as written. For a structured declaration this is the
+   * derived name (its `type`/base or `displayName`), not the full shape.
+   */
   type?: string;
+  /**
+   * Full structured type declaration, present when `type:` resolved to an
+   * object (e.g. an `!include` of a `#%RAML 1.0 DataType` document). Carried
+   * as written (additive).
+   */
+  typeDecl?: TypeDecl;
   examples: ExampleMap;
 }
 

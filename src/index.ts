@@ -42,6 +42,7 @@ export type {
   SecurityScheme,
   Source,
   SourceMap,
+  TypeDecl,
 } from "./model.js";
 export { parseFiles, parseSpec } from "./parse.js";
 export type { ParseFilesOptions } from "./parse.js";
